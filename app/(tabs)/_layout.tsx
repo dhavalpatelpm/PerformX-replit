@@ -1,61 +1,106 @@
-// template
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { BlurView } from "expo-blur";
-import { SymbolView } from "expo-symbols";
-import { Platform, StyleSheet, useColorScheme } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { useTheme } from "@/context/ThemeContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import Colors from "@/constants/colors";
-
-//IMPORTANT: iOS 26 Exists, feel free to use NativeTabs for native tabs with liquid glass support.
 function NativeTabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
+        <Icon sf={{ default: "checkmark.circle", selected: "checkmark.circle.fill" }} />
+        <Label>Today</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="calendar">
+        <Icon sf={{ default: "calendar", selected: "calendar.badge.checkmark" }} />
+        <Label>Calendar</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="recipes">
+        <Icon sf={{ default: "fork.knife", selected: "fork.knife.circle.fill" }} />
+        <Label>Recipes</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
+        <Label>Stats</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
 
 function ClassicTabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const isIOS = Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        tabBarInactiveTintColor: Colors.light.tabIconDefault,
-        headerShown: true,
+        headerShown: false,
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: Platform.select({
-            ios: "transparent",
-            android: isDark ? "#000" : "#fff",
-          }),
-          borderTopWidth: 0,
+          backgroundColor: isIOS ? "transparent" : isWeb ? colors.card : colors.card,
+          borderTopWidth: isWeb ? 1 : 0,
+          borderTopColor: colors.border,
           elevation: 0,
+          ...(isWeb ? { height: 84 } : {}),
         },
         tabBarBackground: () =>
-          Platform.OS === "ios" ? (
+          isIOS ? (
             <BlurView
-              intensity={100}
+              intensity={90}
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
-          ) : null,
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border }]} />
+          ),
+        tabBarLabelStyle: {
+          fontFamily: "Outfit_500Medium",
+          fontSize: 11,
+          marginBottom: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => (
-            <SymbolView name="house" tintColor={color} size={24} />
+          title: "Today",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="checkmark-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: "Calendar",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="recipes"
+        options={{
+          title: "Recipes",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="restaurant-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Stats",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart-outline" size={size} color={color} />
           ),
         }}
       />
