@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  runOnJS,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -42,15 +41,21 @@ const HABIT_ICONS = [
   "barbell-outline",
   "bicycle-outline",
   "walk-outline",
-  "nutrition-outline",
+  "leaf-outline",
   "water-outline",
   "moon-outline",
   "book-outline",
   "heart-outline",
   "flash-outline",
-  "fitness-outline",
+  "body-outline",
   "medkit-outline",
   "trophy-outline",
+  "flame-outline",
+  "thermometer-outline",
+  "bed-outline",
+  "nutrition-outline",
+  "fitness-outline",
+  "stopwatch-outline",
 ];
 
 
@@ -72,9 +77,9 @@ function AnimatedHabitRow({ habit }: { habit: Habit }) {
   }, [done, habit.id, toggleHabit]);
 
   const onPress = useCallback(() => {
-    scale.value = withSpring(0.95, { damping: 12 }, () => {
-      scale.value = withSpring(1, { damping: 12 });
-      runOnJS(handleToggle)();
+    handleToggle();
+    scale.value = withSpring(0.94, { damping: 15, stiffness: 300 }, () => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 300 });
     });
   }, [handleToggle]);
 
@@ -288,7 +293,7 @@ export default function TodayScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingTop: topPad + 12, paddingBottom: botPad + 120 },
+          { paddingTop: topPad + 12, paddingBottom: insets.bottom + 160 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -424,7 +429,7 @@ export default function TodayScreen() {
       <View
         style={[
           styles.fab,
-          { bottom: botPad + 90, backgroundColor: colors.tint },
+          { bottom: insets.bottom + 76, backgroundColor: colors.tint },
         ]}
       >
         <Pressable

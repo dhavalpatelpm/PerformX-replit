@@ -61,12 +61,27 @@ function calcStreak(habit: Habit): number {
   return streak;
 }
 
+const ICON_NORMALIZE: Record<string, string> = {
+  barbell: "barbell-outline",
+  thermometer: "thermometer-outline",
+  nutrition: "leaf-outline",
+  brain: "body-outline",
+  flame: "flame-outline",
+  moon: "moon-outline",
+  water: "water-outline",
+  book: "book-outline",
+};
+
+function normalizeIcon(icon: string): string {
+  return ICON_NORMALIZE[icon] ?? icon;
+}
+
 const DEFAULT_HABITS: Habit[] = [
   {
     id: "1",
     name: "Heavy Compound Lift",
     category: "Training",
-    icon: "barbell",
+    icon: "barbell-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -74,7 +89,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "2",
     name: "Cold Shower 3 min",
     category: "Recovery",
-    icon: "thermometer",
+    icon: "thermometer-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -82,7 +97,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "3",
     name: "High Protein Meal",
     category: "Nutrition",
-    icon: "nutrition",
+    icon: "leaf-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -90,7 +105,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "4",
     name: "10 min Meditation",
     category: "Mental",
-    icon: "brain",
+    icon: "body-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -98,7 +113,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "5",
     name: "HIIT / Cardio Session",
     category: "Training",
-    icon: "flame",
+    icon: "flame-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -106,7 +121,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "6",
     name: "8h Sleep Logged",
     category: "Recovery",
-    icon: "moon",
+    icon: "moon-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -114,7 +129,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "7",
     name: "3L Water Intake",
     category: "Nutrition",
-    icon: "water",
+    icon: "water-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -122,7 +137,7 @@ const DEFAULT_HABITS: Habit[] = [
     id: "8",
     name: "Journaling",
     category: "Mental",
-    icon: "book",
+    icon: "book-outline",
     completedDates: [],
     createdAt: new Date().toISOString(),
   },
@@ -137,7 +152,13 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       if (val) {
         try {
           const parsed = JSON.parse(val);
-          if (Array.isArray(parsed) && parsed.length > 0) setHabits(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const normalized = parsed.map((h: Habit) => ({
+              ...h,
+              icon: normalizeIcon(h.icon),
+            }));
+            setHabits(normalized);
+          }
         } catch {}
       }
     });
