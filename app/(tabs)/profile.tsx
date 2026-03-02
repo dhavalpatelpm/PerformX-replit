@@ -564,7 +564,7 @@ const pStyles = StyleSheet.create({
   footerTagline:    { fontSize: 32, letterSpacing: -0.5 },
   footerCreditRow:  { flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
   footerCredit:     { fontSize: 17 },
-  footerHeart:      { fontSize: 17 },
+  footerHeart:      { fontSize: 26 },
   bmiCard: { borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, overflow: "hidden" },
   bmiTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
   bmiLabel: { fontSize: 13, marginBottom: 4 },
