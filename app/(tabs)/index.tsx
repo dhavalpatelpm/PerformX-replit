@@ -243,6 +243,29 @@ const HABIT_ICONS = [
   "sunny-outline",
 ];
 
+const ICON_LABELS: Record<string, string> = {
+  "barbell-outline": "Lift",
+  "bicycle-outline": "Cycle",
+  "walk-outline": "Walk",
+  "leaf-outline": "Nature",
+  "water-outline": "Hydrate",
+  "moon-outline": "Sleep",
+  "book-outline": "Read",
+  "heart-outline": "Heart",
+  "flash-outline": "Energy",
+  "body-outline": "Body",
+  "medkit-outline": "Health",
+  "trophy-outline": "Goals",
+  "flame-outline": "Burn",
+  "thermometer-outline": "Temp",
+  "bed-outline": "Rest",
+  "nutrition-outline": "Diet",
+  "stopwatch-outline": "Timer",
+  "fitness-outline": "Fit",
+  "footsteps-outline": "Steps",
+  "sunny-outline": "Morning",
+};
+
 function HabitForm({
   name,
   setName,
@@ -380,25 +403,41 @@ function HabitForm({
         Icon
       </Text>
       <View style={styles.iconGrid}>
-        {HABIT_ICONS.map((ic) => (
-          <Pressable
-            key={ic}
-            onPress={() => setIcon(ic)}
-            style={[
-              styles.iconBtn,
-              {
-                backgroundColor: icon === ic ? CATEGORY_COLORS[category] + "25" : colors.card,
-                borderColor: icon === ic ? CATEGORY_COLORS[category] : colors.border,
-              },
-            ]}
-          >
-            <Ionicons
-              name={ic as any}
-              size={22}
-              color={icon === ic ? CATEGORY_COLORS[category] : colors.textSecondary}
-            />
-          </Pressable>
-        ))}
+        {HABIT_ICONS.map((ic) => {
+          const active = icon === ic;
+          const activeColor = CATEGORY_COLORS[category];
+          return (
+            <Pressable
+              key={ic}
+              onPress={() => setIcon(ic)}
+              style={[
+                styles.iconBtn,
+                {
+                  backgroundColor: active ? activeColor + "25" : colors.card,
+                  borderColor: active ? activeColor : colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name={ic as any}
+                size={20}
+                color={active ? activeColor : colors.textSecondary}
+              />
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: 9,
+                  fontFamily: "Outfit_500Medium",
+                  color: active ? activeColor : colors.textMuted,
+                  marginTop: 4,
+                  textAlign: "center",
+                }}
+              >
+                {ICON_LABELS[ic] ?? ic.replace("-outline", "")}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <Pressable
@@ -1324,11 +1363,12 @@ const styles = StyleSheet.create({
   iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   iconBtn: {
     width: ICON_SIZE,
-    height: ICON_SIZE,
+    height: ICON_SIZE + 24,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 8,
   },
   submitBtn: {
     borderRadius: 16,
