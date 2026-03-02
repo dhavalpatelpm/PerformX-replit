@@ -23,6 +23,165 @@ import { useUser } from "@/context/UserContext";
 // Alphabetical order (All prepended at render time)
 const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recovery", "Training", "Work"];
 
+/* ─── Time Picker Types & Helpers ─────────────────────────────────────── */
+type TimeVal = { hour: number; minute: number; ampm: "AM" | "PM" };
+const MINUTE_STEPS = [0, 15, 30, 45];
+
+function parseTimeStr(str: string): TimeVal {
+  const m = str.trim().match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (m) return { hour: parseInt(m[1], 10), minute: parseInt(m[2], 10), ampm: m[3].toUpperCase() as "AM" | "PM" };
+  return { hour: 7, minute: 0, ampm: "AM" };
+}
+function fmtTime(t: TimeVal): string {
+  return `${t.hour}:${t.minute.toString().padStart(2, "0")} ${t.ampm}`;
+}
+function cycleHour(h: number, dir: 1 | -1): number {
+  let n = h + dir; if (n > 12) n = 1; if (n < 1) n = 12; return n;
+}
+function cycleMinute(m: number, dir: 1 | -1): number {
+  const i = MINUTE_STEPS.indexOf(m);
+  return MINUTE_STEPS[(i + dir + MINUTE_STEPS.length) % MINUTE_STEPS.length];
+}
+
+function TimeSpinner({ val, onChange, accent, colors }: { val: TimeVal; onChange: (v: TimeVal) => void; accent: string; colors: any }) {
+  const segStyle = {
+    alignItems: "center" as const,
+    minWidth: 44,
+  };
+  const numStyle = { fontSize: 28, fontFamily: "Outfit_700Bold", color: colors.text };
+  const chevronColor = accent;
+  const ampmActive = { backgroundColor: accent + "20", borderColor: accent };
+  const ampmInactive = { backgroundColor: colors.card, borderColor: colors.border };
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+      {/* Hour */}
+      <View style={segStyle}>
+        <Pressable onPress={() => onChange({ ...val, hour: cycleHour(val.hour, 1) })} hitSlop={8}>
+          <Ionicons name="chevron-up" size={20} color={chevronColor} />
+        </Pressable>
+        <Text style={numStyle}>{val.hour}</Text>
+        <Pressable onPress={() => onChange({ ...val, hour: cycleHour(val.hour, -1) })} hitSlop={8}>
+          <Ionicons name="chevron-down" size={20} color={chevronColor} />
+        </Pressable>
+      </View>
+      <Text style={{ fontSize: 26, fontFamily: "Outfit_700Bold", color: colors.text, marginBottom: 2 }}>:</Text>
+      {/* Minute */}
+      <View style={segStyle}>
+        <Pressable onPress={() => onChange({ ...val, minute: cycleMinute(val.minute, 1) })} hitSlop={8}>
+          <Ionicons name="chevron-up" size={20} color={chevronColor} />
+        </Pressable>
+        <Text style={numStyle}>{val.minute.toString().padStart(2, "0")}</Text>
+        <Pressable onPress={() => onChange({ ...val, minute: cycleMinute(val.minute, -1) })} hitSlop={8}>
+          <Ionicons name="chevron-down" size={20} color={chevronColor} />
+        </Pressable>
+      </View>
+      {/* AM / PM */}
+      <View style={{ gap: 6, marginLeft: 8 }}>
+        {(["AM", "PM"] as const).map(p => (
+          <Pressable
+            key={p}
+            onPress={() => onChange({ ...val, ampm: p })}
+            style={[
+              { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5 },
+              val.ampm === p ? ampmActive : ampmInactive,
+            ]}
+          >
+            <Text style={{ fontSize: 13, fontFamily: "Outfit_700Bold", color: val.ampm === p ? accent : colors.textSecondary }}>
+              {p}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function TimePickerSheet({
+  visible, value, onClose, onConfirm, accent, colors,
+}: {
+  visible: boolean; value: string; onClose: () => void;
+  onConfirm: (v: string) => void; accent: string; colors: any;
+}) {
+  const parsedParts = value && value !== "Anytime" ? value.split(/\s*[–\-]\s*/) : [];
+  const [start, setStart] = useState<TimeVal>(parsedParts[0] ? parseTimeStr(parsedParts[0]) : { hour: 7, minute: 0, ampm: "AM" });
+  const [end, setEnd] = useState<TimeVal>(parsedParts[1] ? parseTimeStr(parsedParts[1]) : { hour: 8, minute: 0, ampm: "AM" });
+  const [anytime, setAnytime] = useState(value === "Anytime");
+
+  useEffect(() => {
+    if (visible) {
+      const parts = value && value !== "Anytime" ? value.split(/\s*[–\-]\s*/) : [];
+      setStart(parts[0] ? parseTimeStr(parts[0]) : { hour: 7, minute: 0, ampm: "AM" });
+      setEnd(parts[1] ? parseTimeStr(parts[1]) : { hour: 8, minute: 0, ampm: "AM" });
+      setAnytime(value === "Anytime");
+    }
+  }, [visible]);
+
+  const confirm = () => {
+    if (anytime) { onConfirm("Anytime"); return; }
+    onConfirm(`${fmtTime(start)} – ${fmtTime(end)}`);
+  };
+
+  const sectionLabel = { fontSize: 11, fontFamily: "Outfit_600SemiBold" as const, letterSpacing: 0.8, marginBottom: 12 };
+  const divider = { height: 1, backgroundColor: colors.border, marginVertical: 20 };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)" }} onPress={onClose} />
+      <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+        {/* Handle */}
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />
+
+        {/* Header */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <Text style={{ fontSize: 18, fontFamily: "Outfit_700Bold", color: colors.text }}>Set Time Slot</Text>
+          <Pressable onPress={onClose} hitSlop={10}>
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+
+        {/* Anytime chip */}
+        <Pressable
+          onPress={() => setAnytime(a => !a)}
+          style={[
+            { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, marginBottom: 24 },
+            anytime ? { backgroundColor: accent + "20", borderColor: accent } : { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <Ionicons name="infinite-outline" size={15} color={anytime ? accent : colors.textSecondary} />
+          <Text style={{ fontSize: 13, fontFamily: "Outfit_600SemiBold", color: anytime ? accent : colors.textSecondary }}>Anytime</Text>
+        </Pressable>
+
+        {/* Spinners */}
+        {!anytime && (
+          <>
+            <Text style={[sectionLabel, { color: colors.textMuted }]}>START TIME</Text>
+            <TimeSpinner val={start} onChange={setStart} accent={accent} colors={colors} />
+            <View style={divider} />
+            <Text style={[sectionLabel, { color: colors.textMuted }]}>END TIME</Text>
+            <TimeSpinner val={end} onChange={setEnd} accent={accent} colors={colors} />
+          </>
+        )}
+
+        {/* Actions */}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
+          <Pressable
+            onPress={() => { onConfirm(""); onClose(); }}
+            style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1, borderColor: colors.border, backgroundColor: pressed ? colors.card : "transparent" }]}
+          >
+            <Text style={{ fontSize: 15, fontFamily: "Outfit_600SemiBold", color: colors.textSecondary }}>Clear</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { confirm(); onClose(); }}
+            style={({ pressed }) => [{ flex: 2, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: accent, opacity: pressed ? 0.85 : 1 }]}
+          >
+            <Text style={{ fontSize: 15, fontFamily: "Outfit_700Bold", color: "#000" }}>Confirm</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function parseTimeSlotMinutes(slot?: string): number {
   if (!slot || slot.toLowerCase() === "anytime") return Infinity;
   const start = slot.split(/\s*[–\-]\s*/)[0].trim();
@@ -105,6 +264,9 @@ function HabitForm({
   submitLabel: string;
   colors: any;
 }) {
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const accent: string = colors.tint;
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -131,16 +293,49 @@ function HabitForm({
       <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
         Time Slot <Text style={{ color: colors.textMuted, fontFamily: "Outfit_400Regular", fontSize: 12 }}>(optional)</Text>
       </Text>
-      <TextInput
-        value={timeSlot}
-        onChangeText={setTimeSlot}
-        placeholder="e.g. 7:00 AM – 8:00 AM or Anytime"
-        placeholderTextColor={colors.textMuted}
-        style={[
+      <Pressable
+        onPress={() => setShowTimePicker(true)}
+        style={({ pressed }) => [
           styles.input,
-          { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" },
+          {
+            backgroundColor: colors.card,
+            borderColor: timeSlot ? accent + "80" : colors.border,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            opacity: pressed ? 0.75 : 1,
+          },
         ]}
-        returnKeyType="done"
+      >
+        <Text
+          style={{
+            fontFamily: "Outfit_400Regular",
+            fontSize: 16,
+            color: timeSlot ? colors.text : colors.textMuted,
+            flex: 1,
+          }}
+        >
+          {timeSlot || "Tap to set time slot"}
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {!!timeSlot && (
+            <Pressable
+              onPress={() => setTimeSlot("")}
+              hitSlop={10}
+            >
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </Pressable>
+          )}
+          <Ionicons name="time-outline" size={18} color={timeSlot ? accent : colors.textMuted} />
+        </View>
+      </Pressable>
+      <TimePickerSheet
+        visible={showTimePicker}
+        value={timeSlot}
+        onClose={() => setShowTimePicker(false)}
+        onConfirm={(v) => { setTimeSlot(v); setShowTimePicker(false); }}
+        accent={accent}
+        colors={colors}
       />
 
       <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
