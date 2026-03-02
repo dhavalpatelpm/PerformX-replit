@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   Platform,
   Share,
   Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -19,6 +22,18 @@ type Goal = "Strength" | "Endurance" | "Recovery" | "Mental Focus";
 type DietType = "Pure Veg" | "Eggetarian" | "Non-Veg";
 type MealType = "Breakfast" | "Brunch" | "Lunch" | "Pre-Workout" | "Post-Workout" | "Dinner";
 type Macro = { protein: number; carbs: number; fat: number; calories: number };
+
+const PREF_KEY = "@biohack_meal_pref";
+
+interface MealPreference {
+  name: string;
+  diet: DietType | "";
+  goals: Goal[];
+  mealTimes: MealType[];
+  restrictions: string;
+  notes: string;
+  savedAt: string;
+}
 
 interface Recipe {
   id: string;
@@ -1216,6 +1231,210 @@ const rdStyles = StyleSheet.create({
   tagText: { fontSize: 13 },
 });
 
+// ─── Meal Preference Modal ─────────────────────────────────────────────────
+function MealPreferenceModal({
+  visible,
+  initial,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  initial: MealPreference | null;
+  onClose: () => void;
+  onSave: (pref: MealPreference) => void;
+}) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const blank: MealPreference = { name: "", diet: "", goals: [], mealTimes: [], restrictions: "", notes: "", savedAt: "" };
+  const [form, setForm] = useState<MealPreference>(blank);
+
+  useEffect(() => {
+    if (visible) setForm(initial ?? blank);
+  }, [visible]);
+
+  const toggleGoal = (g: Goal) => setForm(f => ({ ...f, goals: f.goals.includes(g) ? f.goals.filter(x => x !== g) : [...f.goals, g] }));
+  const toggleMeal = (m: MealType) => setForm(f => ({ ...f, mealTimes: f.mealTimes.includes(m) ? f.mealTimes.filter(x => x !== m) : [...f.mealTimes, m] }));
+
+  const handleSave = () => {
+    if (!form.diet) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSave({ ...form, savedAt: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) });
+  };
+
+  const handleShare = async () => {
+    const lines: string[] = [
+      "My Meal Preferences — BioHack",
+      "",
+      form.name ? `Athlete: ${form.name}` : "",
+      form.diet ? `Diet: ${form.diet}` : "",
+      form.goals.length ? `Training Goals: ${form.goals.join(", ")}` : "",
+      form.mealTimes.length ? `Meals Needed: ${form.mealTimes.join(", ")}` : "",
+      form.restrictions ? `Dietary Restrictions: ${form.restrictions}` : "",
+      "",
+      form.notes ? `Notes for Dietician:\n${form.notes}` : "",
+      "",
+      "Shared from BioHack — Performance Habit Tracker",
+    ].filter(Boolean);
+    try { await Share.share({ message: lines.join("\n") }); } catch {}
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View style={[mpStyles.container, { backgroundColor: colors.background }]}>
+          <LinearGradient colors={["#00E67628", colors.background]} style={mpStyles.headerGradient} />
+
+          <View style={[mpStyles.header, { paddingTop: insets.top || 20 }]}>
+            <Pressable onPress={onClose} style={[mpStyles.closeBtn, { backgroundColor: colors.card }]} hitSlop={12}>
+              <Ionicons name="close" size={20} color={colors.text} />
+            </Pressable>
+            <Text style={[mpStyles.headerTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+              Meal Preference
+            </Text>
+            <Pressable onPress={handleShare} style={[mpStyles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]} hitSlop={8}>
+              <Ionicons name="share-social-outline" size={18} color={colors.tint} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={[mpStyles.scroll, { paddingBottom: insets.bottom + 60 }]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={[mpStyles.helpText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular", backgroundColor: colors.card, borderColor: colors.border }]}>
+              Save your preferences below and share this summary with your dietician so they can plan your custom meal programme.
+            </Text>
+
+            {/* Name */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Your Name (optional)</Text>
+            <TextInput
+              value={form.name}
+              onChangeText={v => setForm(f => ({ ...f, name: v }))}
+              placeholder="e.g. Rahul Sharma"
+              placeholderTextColor={colors.textMuted}
+              style={[mpStyles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
+            />
+
+            {/* Diet */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+              Dietary Preference <Text style={{ color: "#FF3B30" }}>*</Text>
+            </Text>
+            <View style={mpStyles.chipRow}>
+              {(["Pure Veg", "Eggetarian", "Non-Veg"] as DietType[]).map(d => {
+                const active = form.diet === d;
+                const col = DIET_COLORS[d];
+                return (
+                  <Pressable
+                    key={d}
+                    onPress={() => { setForm(f => ({ ...f, diet: d })); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    style={[mpStyles.chip, { backgroundColor: active ? col : colors.card, borderColor: active ? col : colors.border }]}
+                  >
+                    <Ionicons name={DIET_ICONS[d] as any} size={14} color={active ? "#fff" : col} />
+                    <Text style={[mpStyles.chipText, { color: active ? "#fff" : colors.text, fontFamily: "Outfit_700Bold" }]}>{d}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Goals */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Training Goals</Text>
+            <View style={mpStyles.chipRow}>
+              {(["Strength", "Endurance", "Recovery", "Mental Focus"] as Goal[]).map(g => {
+                const active = form.goals.includes(g);
+                const col = GOAL_COLORS[g];
+                return (
+                  <Pressable
+                    key={g}
+                    onPress={() => { toggleGoal(g); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    style={[mpStyles.chip, { backgroundColor: active ? col : colors.card, borderColor: active ? col : colors.border }]}
+                  >
+                    <Ionicons name={GOAL_ICONS[g] as any} size={14} color={active ? "#fff" : col} />
+                    <Text style={[mpStyles.chipText, { color: active ? "#fff" : colors.text, fontFamily: "Outfit_600SemiBold" }]}>{g}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Meal Times */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Meals I Need Help With</Text>
+            <View style={mpStyles.chipRow}>
+              {(["Breakfast", "Brunch", "Lunch", "Pre-Workout", "Post-Workout", "Dinner"] as MealType[]).map(m => {
+                const active = form.mealTimes.includes(m);
+                const col = MEAL_COLORS[m];
+                return (
+                  <Pressable
+                    key={m}
+                    onPress={() => { toggleMeal(m); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    style={[mpStyles.chip, { backgroundColor: active ? col : colors.card, borderColor: active ? col : colors.border }]}
+                  >
+                    <Ionicons name={MEAL_ICONS[m] as any} size={14} color={active ? "#fff" : col} />
+                    <Text style={[mpStyles.chipText, { color: active ? "#fff" : colors.text, fontFamily: "Outfit_600SemiBold" }]}>{m}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Restrictions */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Dietary Restrictions / Allergies</Text>
+            <TextInput
+              value={form.restrictions}
+              onChangeText={v => setForm(f => ({ ...f, restrictions: v }))}
+              placeholder="e.g. Lactose intolerant, no peanuts, gluten free..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={2}
+              style={[mpStyles.input, mpStyles.multiline, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
+            />
+
+            {/* Notes for Dietician */}
+            <Text style={[mpStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Notes for Dietician</Text>
+            <TextInput
+              value={form.notes}
+              onChangeText={v => setForm(f => ({ ...f, notes: v }))}
+              placeholder="Describe your training schedule, body goals, meal timing challenges, or anything else your dietician should know..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              style={[mpStyles.input, mpStyles.multilineL, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
+            />
+
+            {/* Save Button */}
+            <Pressable
+              onPress={handleSave}
+              style={({ pressed }) => [mpStyles.saveBtn, { backgroundColor: colors.tint, opacity: pressed ? 0.85 : 1 }]}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
+              <Text style={[mpStyles.saveBtnText, { fontFamily: "Outfit_800ExtraBold" }]}>Save Preference</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const mpStyles = StyleSheet.create({
+  container: { flex: 1 },
+  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 160 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 18 },
+  shareBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  scroll: { paddingHorizontal: 20, paddingTop: 8 },
+  helpText: { fontSize: 14, lineHeight: 21, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1 },
+  sectionLabel: { fontSize: 11, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 10 },
+  input: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 20 },
+  multiline: { minHeight: 64, textAlignVertical: "top" },
+  multilineL: { minHeight: 120, textAlignVertical: "top" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
+  chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: 1 },
+  chipText: { fontSize: 13 },
+  saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 18, marginTop: 8 },
+  saveBtnText: { fontSize: 16, color: "#000" },
+});
+
 function FilterRow({
   label,
   options,
@@ -1276,6 +1495,37 @@ export default function RecipesScreen() {
   const [selectedGoal, setSelectedGoal] = useState<Goal | "All">("All");
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [prefModalVisible, setPrefModalVisible] = useState(false);
+  const [savedPref, setSavedPref] = useState<MealPreference | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PREF_KEY).then(val => {
+      if (val) { try { setSavedPref(JSON.parse(val)); } catch {} }
+    });
+  }, []);
+
+  const savePref = async (pref: MealPreference) => {
+    await AsyncStorage.setItem(PREF_KEY, JSON.stringify(pref));
+    setSavedPref(pref);
+    setPrefModalVisible(false);
+  };
+
+  const sharePref = async (pref: MealPreference) => {
+    const lines = [
+      "My Meal Preferences — BioHack",
+      "",
+      pref.name ? `Athlete: ${pref.name}` : "",
+      pref.diet ? `Diet: ${pref.diet}` : "",
+      pref.goals.length ? `Training Goals: ${pref.goals.join(", ")}` : "",
+      pref.mealTimes.length ? `Meals Needed: ${pref.mealTimes.join(", ")}` : "",
+      pref.restrictions ? `Dietary Restrictions: ${pref.restrictions}` : "",
+      "",
+      pref.notes ? `Notes for Dietician:\n${pref.notes}` : "",
+      "",
+      "Shared from BioHack — Performance Habit Tracker",
+    ].filter(Boolean);
+    try { await Share.share({ message: lines.join("\n") }); } catch {}
+  };
 
   const filtered = RECIPE_BANK.filter((r) => {
     const dietOk = selectedDiet === "All" || r.diet === selectedDiet;
@@ -1351,14 +1601,110 @@ export default function RecipesScreen() {
         )}
 
         {filtered.length === 0 ? (
-          <View style={[sStyles.emptyState, { borderColor: colors.border }]}>
-            <Ionicons name="restaurant-outline" size={48} color={colors.textMuted} />
-            <Text style={[sStyles.emptyText, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
-              No recipes match
-            </Text>
-            <Text style={[sStyles.emptyHint, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-              Try adjusting your filters
-            </Text>
+          <View style={sStyles.emptyWrapper}>
+            {/* No match message */}
+            <View style={[sStyles.emptyTop, { borderColor: colors.border }]}>
+              <Ionicons name="restaurant-outline" size={42} color={colors.textMuted} />
+              <Text style={[sStyles.emptyText, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+                No recipes match your filters
+              </Text>
+              <Text style={[sStyles.emptyHint, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                Try adjusting the filters above — or save your preferences for your dietician.
+              </Text>
+            </View>
+
+            {/* Saved preference card */}
+            {savedPref ? (
+              <View style={[sStyles.prefCard, { backgroundColor: colors.card, borderColor: colors.tint + "40" }]}>
+                <LinearGradient colors={[colors.tint + "18", "transparent"]} style={StyleSheet.absoluteFillObject} />
+                <View style={sStyles.prefCardHeader}>
+                  <View style={sStyles.prefCardTitleRow}>
+                    <Ionicons name="person-circle-outline" size={20} color={colors.tint} />
+                    <Text style={[sStyles.prefCardTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+                      {savedPref.name || "My Preferences"}
+                    </Text>
+                  </View>
+                  <Text style={[sStyles.prefCardDate, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                    Saved {savedPref.savedAt}
+                  </Text>
+                </View>
+
+                <View style={sStyles.prefRows}>
+                  {savedPref.diet ? (
+                    <View style={sStyles.prefRow}>
+                      <Ionicons name={DIET_ICONS[savedPref.diet] as any} size={14} color={DIET_COLORS[savedPref.diet]} />
+                      <Text style={[sStyles.prefRowLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>Diet</Text>
+                      <Text style={[sStyles.prefRowValue, { color: DIET_COLORS[savedPref.diet], fontFamily: "Outfit_700Bold" }]}>{savedPref.diet}</Text>
+                    </View>
+                  ) : null}
+                  {savedPref.goals.length > 0 && (
+                    <View style={sStyles.prefRow}>
+                      <Ionicons name="barbell-outline" size={14} color={colors.textSecondary} />
+                      <Text style={[sStyles.prefRowLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>Goals</Text>
+                      <Text style={[sStyles.prefRowValue, { color: colors.text, fontFamily: "Outfit_600SemiBold" }]}>{savedPref.goals.join(", ")}</Text>
+                    </View>
+                  )}
+                  {savedPref.mealTimes.length > 0 && (
+                    <View style={sStyles.prefRow}>
+                      <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                      <Text style={[sStyles.prefRowLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>Meals</Text>
+                      <Text style={[sStyles.prefRowValue, { color: colors.text, fontFamily: "Outfit_600SemiBold" }]}>{savedPref.mealTimes.join(", ")}</Text>
+                    </View>
+                  )}
+                  {savedPref.restrictions ? (
+                    <View style={sStyles.prefRow}>
+                      <Ionicons name="alert-circle-outline" size={14} color="#FFB300" />
+                      <Text style={[sStyles.prefRowLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>Restrictions</Text>
+                      <Text style={[sStyles.prefRowValue, { color: colors.text, fontFamily: "Outfit_400Regular" }]} numberOfLines={1}>{savedPref.restrictions}</Text>
+                    </View>
+                  ) : null}
+                  {savedPref.notes ? (
+                    <View style={[sStyles.prefNoteBox, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
+                      <Text style={[sStyles.prefNoteLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Notes for Dietician</Text>
+                      <Text style={[sStyles.prefNoteText, { color: colors.text, fontFamily: "Outfit_400Regular" }]} numberOfLines={3}>{savedPref.notes}</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={sStyles.prefBtnRow}>
+                  <Pressable
+                    onPress={() => setPrefModalVisible(true)}
+                    style={[sStyles.prefBtn, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}
+                  >
+                    <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
+                    <Text style={[sStyles.prefBtnText, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Edit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); sharePref(savedPref); }}
+                    style={[sStyles.prefBtn, sStyles.prefBtnShare, { backgroundColor: colors.tint }]}
+                  >
+                    <Ionicons name="share-social-outline" size={16} color="#000" />
+                    <Text style={[sStyles.prefBtnText, { color: "#000", fontFamily: "Outfit_800ExtraBold" }]}>Share with Dietician</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              /* No preference saved yet */
+              <Pressable
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setPrefModalVisible(true); }}
+                style={({ pressed }) => [sStyles.addPrefCard, { backgroundColor: colors.card, borderColor: colors.tint + "60", opacity: pressed ? 0.85 : 1 }]}
+              >
+                <LinearGradient colors={[colors.tint + "18", "transparent"]} style={StyleSheet.absoluteFillObject} />
+                <View style={[sStyles.addPrefIcon, { backgroundColor: colors.tint + "20" }]}>
+                  <Ionicons name="nutrition-outline" size={28} color={colors.tint} />
+                </View>
+                <Text style={[sStyles.addPrefTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+                  Save Meal Preference
+                </Text>
+                <Text style={[sStyles.addPrefSub, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
+                  Fill in your dietary needs and share a personalised summary with your dietician so they can plan your meals.
+                </Text>
+                <View style={[sStyles.addPrefCta, { backgroundColor: colors.tint }]}>
+                  <Ionicons name="add" size={18} color="#000" />
+                  <Text style={[sStyles.addPrefCtaText, { fontFamily: "Outfit_800ExtraBold" }]}>Get Started</Text>
+                </View>
+              </Pressable>
+            )}
           </View>
         ) : (
           filtered.map((recipe) => (
@@ -1368,6 +1714,12 @@ export default function RecipesScreen() {
       </ScrollView>
 
       <RecipeDetailModal recipe={selectedRecipe} visible={modalVisible} onClose={() => setModalVisible(false)} />
+      <MealPreferenceModal
+        visible={prefModalVisible}
+        initial={savedPref}
+        onClose={() => setPrefModalVisible(false)}
+        onSave={savePref}
+      />
     </View>
   );
 }
@@ -1404,16 +1756,71 @@ const sStyles = StyleSheet.create({
     marginBottom: 14,
   },
   clearBtnText: { fontSize: 13 },
-  emptyState: {
+  emptyWrapper: { gap: 14, marginTop: 4 },
+  emptyTop: {
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 56,
+    paddingVertical: 36,
     borderWidth: 1,
     borderStyle: "dashed",
     borderRadius: 20,
-    gap: 10,
-    marginTop: 8,
+    gap: 8,
+    paddingHorizontal: 24,
   },
   emptyText: { fontSize: 16 },
-  emptyHint: { fontSize: 13 },
+  emptyHint: { fontSize: 13, textAlign: "center", lineHeight: 19 },
+
+  // Add preference card (no preference saved)
+  addPrefCard: {
+    borderRadius: 22,
+    borderWidth: 1.5,
+    padding: 22,
+    alignItems: "center",
+    gap: 10,
+    overflow: "hidden",
+  },
+  addPrefIcon: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  addPrefTitle: { fontSize: 20 },
+  addPrefSub: { fontSize: 14, textAlign: "center", lineHeight: 20 },
+  addPrefCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    marginTop: 6,
+  },
+  addPrefCtaText: { fontSize: 15, color: "#000" },
+
+  // Saved preference card
+  prefCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+    overflow: "hidden",
+    gap: 14,
+  },
+  prefCardHeader: { gap: 4 },
+  prefCardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  prefCardTitle: { fontSize: 18 },
+  prefCardDate: { fontSize: 12, marginLeft: 28 },
+  prefRows: { gap: 10 },
+  prefRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  prefRowLabel: { fontSize: 12, width: 76 },
+  prefRowValue: { fontSize: 13, flex: 1 },
+  prefNoteBox: { borderRadius: 12, borderWidth: 1, padding: 12, gap: 4 },
+  prefNoteLabel: { fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase" },
+  prefNoteText: { fontSize: 13, lineHeight: 19 },
+  prefBtnRow: { flexDirection: "row", gap: 10 },
+  prefBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  prefBtnShare: { flex: 1, justifyContent: "center", borderWidth: 0 },
+  prefBtnText: { fontSize: 14 },
 });
