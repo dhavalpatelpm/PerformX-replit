@@ -80,6 +80,8 @@ export default function AiScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
+  // Tab bar is position:absolute — pad input above it (49pt bar + home indicator)
+  const tabBarHeight = Platform.OS === "web" ? 84 : 49 + insets.bottom;
 
   const firstName = profile?.name?.split(" ")[0] ?? null;
 
@@ -337,7 +339,7 @@ export default function AiScreen() {
         )}
 
         {/* Input bar */}
-        <View style={[s.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: botPad + 6 }]}>
+        <View style={[s.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: tabBarHeight + 6 }]}>
           <TextInput
             ref={inputRef}
             style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
