@@ -569,7 +569,7 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<HabitCategory | "All">("All");
+  const [selectedCategories, setSelectedCategories] = useState<Set<HabitCategory>>(new Set());
   const [selectedDay, setSelectedDay] = useState<string>(todayKey);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const activeSwipes = useRef(0);
@@ -604,13 +604,13 @@ export default function TodayScreen() {
 
   const filtered = useMemo(() => {
     const list =
-      selectedCategory === "All"
+      selectedCategories.size === 0
         ? dayHabits
-        : dayHabits.filter((h) => h.category === selectedCategory);
+        : dayHabits.filter((h) => selectedCategories.has(h.category));
     return [...list].sort(
       (a, b) => parseTimeSlotMinutes(a.timeSlot) - parseTimeSlotMinutes(b.timeSlot)
     );
-  }, [dayHabits, selectedCategory]);
+  }, [dayHabits, selectedCategories]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -763,12 +763,28 @@ export default function TodayScreen() {
           contentContainerStyle={styles.catFilterRow}
         >
           {(["All", ...CATEGORIES] as (HabitCategory | "All")[]).map((cat) => {
-            const active = selectedCategory === cat;
-            const catColor = cat === "All" ? colors.tint : CATEGORY_COLORS[cat];
+            const isAll    = cat === "All";
+            const active   = isAll ? selectedCategories.size === 0 : selectedCategories.has(cat as HabitCategory);
+            const catColor = isAll ? colors.tint : CATEGORY_COLORS[cat as HabitCategory];
             return (
               <Pressable
                 key={cat}
-                onPress={() => setSelectedCategory(cat)}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (isAll) {
+                    setSelectedCategories(new Set());
+                  } else {
+                    setSelectedCategories((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(cat as HabitCategory)) {
+                        next.delete(cat as HabitCategory);
+                      } else {
+                        next.add(cat as HabitCategory);
+                      }
+                      return next;
+                    });
+                  }
+                }}
                 style={[
                   styles.filterChip,
                   {
@@ -777,9 +793,9 @@ export default function TodayScreen() {
                   },
                 ]}
               >
-                {cat !== "All" && (
+                {!isAll && (
                   <Ionicons
-                    name={CATEGORY_ICONS[cat] as any}
+                    name={CATEGORY_ICONS[cat as HabitCategory] as any}
                     size={13}
                     color={active ? "#fff" : catColor}
                     style={{ marginRight: 4 }}
