@@ -316,27 +316,33 @@ export default function AiScreen() {
           />
         )}
 
-        {/* Quick chips bar (when chat active) */}
+        {/* Quick chips grid (when chat active) */}
         {hasMessages && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.chipsBarScroll}
-            keyboardShouldPersistTaps="handled"
-          >
-            {QUICK_PROMPTS.map(p => (
-              <Pressable
-                key={p}
-                onPress={() => sendMessage(p)}
-                style={({ pressed }) => [
-                  s.chipBar,
-                  { backgroundColor: pressed ? colors.border : colors.card, borderColor: colors.border },
-                ]}
-              >
-                <Text style={[s.chipBarText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>{p}</Text>
-              </Pressable>
+          <View style={[s.chipsGrid, { borderTopColor: colors.border }]}>
+            {QUICK_PROMPTS.reduce<string[][]>((rows, p, i) => {
+              if (i % 2 === 0) rows.push([]);
+              rows[rows.length - 1].push(p);
+              return rows;
+            }, []).map((row, ri) => (
+              <View key={ri} style={s.chipsRow}>
+                {row.map(p => (
+                  <Pressable
+                    key={p}
+                    onPress={() => sendMessage(p)}
+                    style={({ pressed }) => [
+                      s.chipBar,
+                      {
+                        backgroundColor: pressed ? colors.border : colors.card,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[s.chipBarText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>{p}</Text>
+                  </Pressable>
+                ))}
+              </View>
             ))}
-          </ScrollView>
+          </View>
         )}
 
         {/* Input bar */}
@@ -504,21 +510,27 @@ const s = StyleSheet.create({
   dotsRow: { flexDirection: "row", gap: 5, alignItems: "center" },
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: NEON },
 
-  /* Chips bar */
-  chipsBarScroll: {
+  /* Chips grid */
+  chipsGrid: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 6,
     gap: 8,
-    alignItems: "center",
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   chipBar: {
+    flex: 1,
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    alignSelf: "center",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: "center",
   },
-  chipBarText: { fontSize: 12 },
+  chipBarText: { fontSize: 12, lineHeight: 16 },
 
   /* Input */
   inputBar: {
