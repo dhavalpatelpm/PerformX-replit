@@ -901,9 +901,9 @@ const styles = StyleSheet.create({
   greetingLabel: { fontSize: 13, marginBottom: 2 },
   dayLabel: { fontSize: 14, marginBottom: 2 },
   dateLabel: { fontSize: 28 },
-  avatarColumn: { alignItems: "center", gap: 4 },
+  avatarColumn: { alignItems: "flex-end", gap: 4 },
   avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" },
-  avatarProfession: { fontSize: 11, textAlign: "center" },
+  avatarProfession: { fontSize: 11, textAlign: "right" },
   avatarImg:    { width: 44, height: 44, borderRadius: 22 },
   avatarText:   { fontSize: 16 },
   progressCard: {
