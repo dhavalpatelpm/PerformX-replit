@@ -319,6 +319,14 @@ function EditHabitModal({
   );
 }
 
+function getDaysMissed(habit: Habit, todayKey: string): number {
+  if (!habit.completedDates.length) return -1; // never done — no penalty badge
+  const sorted = [...habit.completedDates].sort().reverse();
+  const lastDate = new Date(sorted[0] + "T00:00:00");
+  const todayDate = new Date(todayKey + "T00:00:00");
+  return Math.round((todayDate.getTime() - lastDate.getTime()) / 86400000);
+}
+
 function SwipeableHabitRow({
   habit,
   selectedDay,
@@ -340,6 +348,11 @@ function SwipeableHabitRow({
   const isToday = selectedDay === todayKey;
   const streak = getStreak(habit);
   const catColor = CATEGORY_COLORS[habit.category];
+
+  // Days missed badge — only shown when undone and overdue
+  const daysMissed = isToday && !done ? getDaysMissed(habit, todayKey) : 0;
+  const showMissedBadge = daysMissed >= 3;
+  const missedColor = daysMissed >= 7 ? "#FF3B30" : "#FFB300";
 
   const translateX = useRef(new Animated.Value(0)).current;
   const snappedOffset = useRef(0);
@@ -462,29 +475,44 @@ function SwipeableHabitRow({
             styles.habitRow,
             {
               backgroundColor: colors.card,
-              borderColor: done ? catColor + "55" : colors.border,
-              borderWidth: 1,
+              borderColor: done
+                ? catColor + "55"
+                : showMissedBadge
+                ? missedColor + "70"
+                : colors.border,
+              borderWidth: showMissedBadge && !done ? 1.5 : 1,
             },
           ]}
         >
-          <View style={[styles.habitAccent, { backgroundColor: catColor }]} />
+          <View style={[styles.habitAccent, { backgroundColor: showMissedBadge && !done ? missedColor : catColor }]} />
           <View style={[styles.habitIconWrap, { backgroundColor: catColor + "20" }]}>
             <Ionicons name={habit.icon as any} size={20} color={catColor} />
           </View>
           <View style={styles.habitInfo}>
-            <Text
-              style={[
-                styles.habitName,
-                {
-                  color: done ? colors.textMuted : colors.text,
-                  textDecorationLine: done ? "line-through" : "none",
-                  fontFamily: "Outfit_600SemiBold",
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {habit.name}
-            </Text>
+            <View style={styles.habitNameRow}>
+              <Text
+                style={[
+                  styles.habitName,
+                  {
+                    color: done ? colors.textMuted : colors.text,
+                    textDecorationLine: done ? "line-through" : "none",
+                    fontFamily: "Outfit_600SemiBold",
+                    flex: 1,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {habit.name}
+              </Text>
+              {showMissedBadge && (
+                <View style={[styles.missedBadge, { backgroundColor: missedColor + "22", borderColor: missedColor + "55" }]}>
+                  <Ionicons name="alert-circle" size={11} color={missedColor} />
+                  <Text style={[styles.missedText, { color: missedColor, fontFamily: "Outfit_700Bold" }]}>
+                    {daysMissed}d missed
+                  </Text>
+                </View>
+              )}
+            </View>
             <View style={styles.habitMeta}>
               <View style={[styles.catBadge, { backgroundColor: catColor + "20" }]}>
                 <Text style={[styles.catBadgeText, { color: catColor, fontFamily: "Outfit_500Medium" }]}>
@@ -965,7 +993,10 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   habitInfo: { flex: 1, minWidth: 0 },
-  habitName: { fontSize: 15, marginBottom: 5 },
+  habitNameRow: { flexDirection: "row", alignItems: "center", marginBottom: 5, gap: 8 },
+  habitName: { fontSize: 15 },
+  missedBadge: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8, borderWidth: 1, flexShrink: 0 },
+  missedText: { fontSize: 10 },
   habitMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
   catBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   catBadgeText: { fontSize: 11 },

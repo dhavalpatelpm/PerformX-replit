@@ -114,6 +114,8 @@ export default function ProfileScreen() {
     });
   }, []);
 
+  const [previewCountdown, setPreviewCountdown] = useState(0);
+
   const handleNotifToggle = useCallback(async () => {
     if (Platform.OS === "web") return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -121,11 +123,51 @@ export default function ProfileScreen() {
       const { status } = await Notifications.requestPermissionsAsync();
       setNotifGranted(status === "granted");
     } else {
-      // Can't revoke programmatically — open settings
       await Notifications.cancelAllScheduledNotificationsAsync();
       setNotifGranted(false);
     }
   }, [notifGranted]);
+
+  const handlePreviewNotif = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Find an incomplete habit to use as the sample
+    const dow = new Date().getDay();
+    const di  = dow === 0 ? 6 : dow - 1;
+    const todayStr = new Date().toISOString().split("T")[0];
+    const sample = habits.find(
+      h => (!h.scheduledDays || h.scheduledDays.includes(di)) && !h.completedDates.includes(todayStr)
+    ) ?? habits[0];
+    if (!sample) return;
+
+    const catMsgs: Record<string, string> = {
+      Training: "Every session you skip is a session your competition doesn't.",
+      Recovery: "Recovery is where the real gains happen — don't skip it.",
+      Nutrition: "Your body performs exactly as well as you fuel it.",
+      Mental:   "A sharp mind is your biggest competitive edge.",
+      Personal: "The relationships you build today compound into tomorrow.",
+      Work:     "Consistent deep work is the only shortcut that works.",
+    };
+
+    const trigger = new Date(Date.now() + 5000);
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `Still pending — ${sample.name}`,
+        body:  `${catMsgs[sample.category] ?? "Stay consistent."} Complete this to push your ${sample.category} rate from 45% to 53%+.`,
+        sound: true,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trigger },
+    });
+
+    // Countdown display
+    setPreviewCountdown(5);
+    const iv = setInterval(() => {
+      setPreviewCountdown(c => {
+        if (c <= 1) { clearInterval(iv); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+  }, [habits]);
 
   const completedDays = getCompletedDays();
   const totalActiveDays = completedDays.size;
@@ -302,6 +344,30 @@ export default function ProfileScreen() {
               ios_backgroundColor={colors.border}
             />
           </View>
+          <View style={[pStyles.divider, { backgroundColor: colors.border }]} />
+          <Pressable
+            onPress={handlePreviewNotif}
+            disabled={previewCountdown > 0 || Platform.OS === "web"}
+            style={({ pressed }) => [
+              pStyles.settingRow,
+              { opacity: pressed || previewCountdown > 0 || Platform.OS === "web" ? 0.5 : 1 },
+            ]}
+          >
+            <View style={pStyles.settingLeft}>
+              <View style={[pStyles.settingIcon, { backgroundColor: "#B388FF" + "20" }]}>
+                <Ionicons name="send-outline" size={18} color="#B388FF" />
+              </View>
+              <View>
+                <Text style={[pStyles.settingName, { color: colors.text, fontFamily: "Outfit_600SemiBold" }]}>
+                  Preview Notification
+                </Text>
+                <Text style={[pStyles.settingDesc, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                  {previewCountdown > 0 ? `Arriving in ${previewCountdown}s…` : "Fire a sample nudge in 5 seconds"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
           <View style={[pStyles.divider, { backgroundColor: colors.border }]} />
           <View style={pStyles.settingRow}>
             <View style={pStyles.settingLeft}>
