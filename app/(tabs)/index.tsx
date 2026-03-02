@@ -37,7 +37,7 @@ function cycleHour(h: number, dir: 1 | -1): number {
   let n = h + dir; if (n > 12) n = 1; if (n < 1) n = 12; return n;
 }
 function cycleMinute(m: number, dir: 1 | -1): number {
-  let n = m + dir; if (n > 59) n = 0; if (n < 0) n = 59; return n;
+  let n = m + dir * 5; if (n > 55) n = 0; if (n < 0) n = 55; return n;
 }
 
 function TimeSpinner({ val, onChange, accent, colors }: { val: TimeVal; onChange: (v: TimeVal) => void; accent: string; colors: any }) {
