@@ -193,6 +193,11 @@ export default function ProfileEditScreen() {
             <Text style={[s.changePhotoText, { color: colors.tint, fontFamily: "Outfit_500Medium" }]}>
               {form.profilePicUri ? "Change Photo" : "Add Photo"}
             </Text>
+            {!!form.profession && (
+              <Text style={[s.professionLabel, { color: colors.subtext, fontFamily: "Outfit_500Medium" }]}>
+                {form.profession}
+              </Text>
+            )}
           </View>
 
           {/* Live BMI pill */}
@@ -355,6 +360,7 @@ const s = StyleSheet.create({
   avatarInitials:    { fontSize: 32 },
   cameraBtn:    { position: "absolute", bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   changePhotoText: { fontSize: 14 },
+  professionLabel: { fontSize: 13, marginTop: 4, opacity: 0.75 },
   bmiPill:      { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1, marginBottom: 16, alignSelf: "center" },
   bmiPillText:  { fontSize: 16 },
   bmiPillCat:   { fontSize: 14 },
