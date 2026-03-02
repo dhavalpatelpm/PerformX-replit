@@ -658,19 +658,29 @@ export default function TodayScreen() {
               {dateStr}
             </Text>
           </View>
-          <Pressable
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/profile-edit"); }}
-            style={[styles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "60" }]}
-            hitSlop={6}
-          >
-            {profile?.profilePicUri ? (
-              <Image source={{ uri: profile.profilePicUri }} style={styles.avatarImg} />
-            ) : (
-              <Text style={[styles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
-                {getInitials()}
+          <View style={styles.avatarColumn}>
+            <Pressable
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/profile-edit"); }}
+              style={[styles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "60" }]}
+              hitSlop={6}
+            >
+              {profile?.profilePicUri ? (
+                <Image source={{ uri: profile.profilePicUri }} style={styles.avatarImg} />
+              ) : (
+                <Text style={[styles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+                  {getInitials()}
+                </Text>
+              )}
+            </Pressable>
+            {!!profile?.profession && (
+              <Text
+                style={[styles.avatarProfession, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}
+                numberOfLines={1}
+              >
+                {profile.profession}
               </Text>
             )}
-          </Pressable>
+          </View>
         </View>
 
         <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -892,7 +902,9 @@ const styles = StyleSheet.create({
   greetingLabel: { fontSize: 13, marginBottom: 2 },
   dayLabel: { fontSize: 14, marginBottom: 2 },
   dateLabel: { fontSize: 28 },
+  avatarColumn: { alignItems: "center", gap: 4 },
   avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" },
+  avatarProfession: { fontSize: 10, textAlign: "center", maxWidth: 70 },
   avatarImg:    { width: 44, height: 44, borderRadius: 22 },
   avatarText:   { fontSize: 16 },
   progressCard: {
