@@ -11,7 +11,9 @@ import {
   Animated,
   PanResponder,
   Image,
+  Dimensions,
 } from "react-native";
+
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +21,11 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/context/ThemeContext";
 import { useHabits, Habit, HabitCategory } from "@/context/HabitsContext";
 import { useUser } from "@/context/UserContext";
+
+const MODAL_H_PAD = 20;
+const SCREEN_W = Dimensions.get("window").width;
+const CAT_BTN_W = Math.floor((SCREEN_W - MODAL_H_PAD * 2 - 8 * 2) / 3);
+const ICON_SIZE = Math.floor((SCREEN_W - MODAL_H_PAD * 2 - 10 * 4) / 5);
 
 // Alphabetical order (All prepended at render time)
 const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recovery", "Training", "Work"];
@@ -1304,7 +1311,7 @@ const styles = StyleSheet.create({
   },
   categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   catBtn: {
-    flex: 1,
+    width: CAT_BTN_W,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1316,8 +1323,8 @@ const styles = StyleSheet.create({
   catBtnText: { fontSize: 13 },
   iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   iconBtn: {
-    flex: 1,
-    height: 58,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: "center",
