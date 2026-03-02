@@ -19,14 +19,15 @@ export interface Habit {
   completedDates: string[];
   createdAt: string;
   scheduledDays?: number[]; // 0=Mon … 6=Sun; undefined = every day
+  timeSlot?: string;        // e.g. "7:00 AM – 7:10 AM" or "Anytime"
 }
 
 interface HabitsContextValue {
   habits: Habit[];
   todayKey: string;
   toggleHabit: (id: string) => void;
-  addHabit: (name: string, category: HabitCategory, icon: string) => void;
-  editHabit: (id: string, name: string, category: HabitCategory, icon: string) => void;
+  addHabit: (name: string, category: HabitCategory, icon: string, timeSlot?: string) => void;
+  editHabit: (id: string, name: string, category: HabitCategory, icon: string, timeSlot?: string) => void;
   removeHabit: (id: string) => void;
   getStreak: (habit: Habit) => number;
   isCompletedToday: (habit: Habit) => boolean;
@@ -38,7 +39,7 @@ interface HabitsContextValue {
 const HabitsContext = createContext<HabitsContextValue | null>(null);
 const STORAGE_KEY = "@biohack_habits";
 const SEED_VERSION_KEY = "@biohack_seed_version";
-const CURRENT_SEED_VERSION = "v3";
+const CURRENT_SEED_VERSION = "v4";
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
@@ -89,7 +90,8 @@ function h(
   name: string,
   category: HabitCategory,
   icon: string,
-  scheduledDays?: number[]
+  scheduledDays?: number[],
+  timeSlot?: string
 ): Habit {
   return {
     id: makeId(),
@@ -99,58 +101,62 @@ function h(
     completedDates: [],
     createdAt: new Date().toISOString(),
     scheduledDays,
+    timeSlot,
   };
 }
+
+const T = "6:00 PM – 8:00 PM";   // Training block
+const P = "8:00 PM – 9:00 PM";   // Personal block
 
 // All-day habits (repeat every day)
 const DAILY_HABITS: Habit[] = [
   // Work
-  h("CAT Prep", "Work", "book-outline"),
-  h("Product Management", "Work", "briefcase-outline"),
-  h("Business Analytics", "Work", "stats-chart-outline"),
+  h("CAT Prep",            "Work", "book-outline",         undefined, "8:00 AM – 12:00 PM"),
+  h("Product Management",  "Work", "briefcase-outline",    undefined, "2:00 PM – 6:00 PM"),
+  h("Business Analytics",  "Work", "stats-chart-outline",  undefined, "9:00 PM – 11:30 PM"),
   // Recovery
-  h("Cold Shower 3 min", "Recovery", "water-outline"),
-  h("8 hrs Sleep", "Recovery", "moon-outline"),
+  h("Cold Shower 3 min",   "Recovery", "water-outline",    undefined, "7:30 AM – 7:40 AM"),
+  h("8 hrs Sleep",         "Recovery", "moon-outline",     undefined, "12:00 AM – 7:00 AM"),
   // Nutrition
-  h("High Protein Meal", "Nutrition", "restaurant-outline"),
-  h("3L Water Intake", "Nutrition", "water-outline"),
+  h("High Protein Meal",   "Nutrition", "restaurant-outline", undefined, "1:00 PM – 2:00 PM"),
+  h("3L Water Intake",     "Nutrition", "water-outline",   undefined, "Anytime"),
   // Mental
-  h("10 min Meditation", "Mental", "sparkles-outline"),
-  h("Journaling", "Mental", "pencil-outline"),
+  h("10 min Meditation",   "Mental", "sparkles-outline",   undefined, "7:00 AM – 7:10 AM"),
+  h("Journaling",          "Mental", "pencil-outline",     undefined, "Anytime"),
   // Personal
-  h("Networking — Talk with Founders", "Personal", "people-outline"),
-  h("Social Media", "Personal", "phone-portrait-outline"),
-  h("Family Time", "Personal", "home-outline"),
+  h("Networking — Talk with Founders", "Personal", "people-outline",        undefined, P),
+  h("Social Media",                    "Personal", "phone-portrait-outline", undefined, P),
+  h("Family Time",                     "Personal", "home-outline",           undefined, P),
 ];
 
 // Training habits scheduled per day (0=Mon … 6=Sun)
 const TRAINING_HABITS: Habit[] = [
   // Monday — Chest
-  h("Chest Workout", "Training", "barbell-outline", [0]),
-  h("Aerobics Activity", "Training", "bicycle-outline", [0]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [0]),
+  h("Chest Workout",       "Training", "barbell-outline",     [0], T),
+  h("Aerobics Activity",   "Training", "bicycle-outline",     [0], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [0], T),
   // Tuesday — Back
-  h("Back Workout", "Training", "barbell-outline", [1]),
-  h("Activity-1", "Training", "walk-outline", [1]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [1]),
+  h("Back Workout",        "Training", "barbell-outline",     [1], T),
+  h("Activity-1",          "Training", "walk-outline",        [1], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [1], T),
   // Wednesday — Shoulders
-  h("Shoulder Workout", "Training", "barbell-outline", [2]),
-  h("Zumba", "Training", "body-outline", [2]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [2]),
+  h("Shoulder Workout",    "Training", "barbell-outline",     [2], T),
+  h("Zumba",               "Training", "body-outline",        [2], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [2], T),
   // Thursday — Triceps + Core
-  h("Triceps + Core Workout", "Training", "barbell-outline", [3]),
-  h("Activity-2", "Training", "walk-outline", [3]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [3]),
+  h("Triceps + Core Workout","Training","barbell-outline",    [3], T),
+  h("Activity-2",          "Training", "walk-outline",        [3], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [3], T),
   // Friday — Biceps + Forearms
-  h("Biceps + Forearms Workout", "Training", "barbell-outline", [4]),
-  h("Activity-3", "Training", "walk-outline", [4]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [4]),
+  h("Biceps + Forearms Workout","Training","barbell-outline", [4], T),
+  h("Activity-3",          "Training", "walk-outline",        [4], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [4], T),
   // Saturday — Legs
-  h("Legs Workout", "Training", "barbell-outline", [5]),
-  h("Yoga", "Training", "body-outline", [5]),
-  h("HIIT / Cardio Session", "Training", "flame-outline", [5]),
+  h("Legs Workout",        "Training", "barbell-outline",     [5], T),
+  h("Yoga",                "Training", "body-outline",        [5], T),
+  h("HIIT / Cardio Session","Training","flame-outline",        [5], T),
   // Sunday — Active Recovery
-  h("Recovery + Personality Development", "Training", "accessibility-outline", [6]),
+  h("Recovery + Personality Development","Training","accessibility-outline",[6], T),
 ];
 
 const DEFAULT_HABITS: Habit[] = [...TRAINING_HABITS, ...DAILY_HABITS];
@@ -205,7 +211,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   );
 
   const addHabit = useCallback(
-    (name: string, category: HabitCategory, icon: string) => {
+    (name: string, category: HabitCategory, icon: string, timeSlot?: string) => {
       const newHabit: Habit = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         name,
@@ -213,7 +219,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         icon,
         completedDates: [],
         createdAt: new Date().toISOString(),
-        // no scheduledDays → shows every day
+        timeSlot: timeSlot?.trim() || undefined,
       };
       setHabits((prev) => {
         const updated = [...prev, newHabit];
@@ -225,10 +231,10 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   );
 
   const editHabit = useCallback(
-    (id: string, name: string, category: HabitCategory, icon: string) => {
+    (id: string, name: string, category: HabitCategory, icon: string, timeSlot?: string) => {
       setHabits((prev) => {
         const updated = prev.map((h) =>
-          h.id === id ? { ...h, name, category, icon } : h
+          h.id === id ? { ...h, name, category, icon, timeSlot: timeSlot?.trim() || undefined } : h
         );
         persist(updated);
         return updated;

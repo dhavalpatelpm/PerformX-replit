@@ -70,6 +70,8 @@ function HabitForm({
   setCategory,
   icon,
   setIcon,
+  timeSlot,
+  setTimeSlot,
   onSubmit,
   submitLabel,
   colors,
@@ -80,6 +82,8 @@ function HabitForm({
   setCategory: (v: HabitCategory) => void;
   icon: string;
   setIcon: (v: string) => void;
+  timeSlot: string;
+  setTimeSlot: (v: string) => void;
   onSubmit: () => void;
   submitLabel: string;
   colors: any;
@@ -104,6 +108,21 @@ function HabitForm({
           { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" },
         ]}
         autoFocus
+        returnKeyType="next"
+      />
+
+      <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
+        Time Slot <Text style={{ color: colors.textMuted, fontFamily: "Outfit_400Regular", fontSize: 12 }}>(optional)</Text>
+      </Text>
+      <TextInput
+        value={timeSlot}
+        onChangeText={setTimeSlot}
+        placeholder="e.g. 7:00 AM – 8:00 AM or Anytime"
+        placeholderTextColor={colors.textMuted}
+        style={[
+          styles.input,
+          { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" },
+        ]}
         returnKeyType="done"
       />
 
@@ -185,13 +204,15 @@ function AddHabitModal({ visible, onClose }: { visible: boolean; onClose: () => 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<HabitCategory>("Training");
   const [icon, setIcon] = useState("barbell-outline");
+  const [timeSlot, setTimeSlot] = useState("");
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    addHabit(name.trim(), category, icon);
+    addHabit(name.trim(), category, icon, timeSlot);
     setName("");
     setCategory("Training");
     setIcon("barbell-outline");
+    setTimeSlot("");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onClose();
   };
@@ -212,6 +233,8 @@ function AddHabitModal({ visible, onClose }: { visible: boolean; onClose: () => 
           setCategory={setCategory}
           icon={icon}
           setIcon={setIcon}
+          timeSlot={timeSlot}
+          setTimeSlot={setTimeSlot}
           onSubmit={handleAdd}
           submitLabel="Add Habit"
           colors={colors}
@@ -235,18 +258,20 @@ function EditHabitModal({
   const [name, setName] = useState("");
   const [category, setCategory] = useState<HabitCategory>("Training");
   const [icon, setIcon] = useState("barbell-outline");
+  const [timeSlot, setTimeSlot] = useState("");
 
   useEffect(() => {
     if (habit) {
       setName(habit.name);
       setCategory(habit.category);
       setIcon(habit.icon);
+      setTimeSlot(habit.timeSlot ?? "");
     }
   }, [habit]);
 
   const handleSave = () => {
     if (!habit || !name.trim()) return;
-    editHabit(habit.id, name.trim(), category, icon);
+    editHabit(habit.id, name.trim(), category, icon, timeSlot);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onClose();
   };
@@ -270,6 +295,8 @@ function EditHabitModal({
           setCategory={setCategory}
           icon={icon}
           setIcon={setIcon}
+          timeSlot={timeSlot}
+          setTimeSlot={setTimeSlot}
           onSubmit={handleSave}
           submitLabel="Save Changes"
           colors={colors}
@@ -460,6 +487,14 @@ function SwipeableHabitRow({
                 </View>
               )}
             </View>
+            {!!habit.timeSlot && (
+              <View style={styles.timeSlotRow}>
+                <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+                <Text style={[styles.timeSlotText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                  {habit.timeSlot}
+                </Text>
+              </View>
+            )}
           </View>
           <Pressable
             onPress={() => {
@@ -921,6 +956,8 @@ const styles = StyleSheet.create({
   catBadgeText: { fontSize: 11 },
   streakBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   streakText: { fontSize: 12 },
+  timeSlotRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 },
+  timeSlotText: { fontSize: 11 },
   checkbox: {
     width: 30,
     height: 30,
