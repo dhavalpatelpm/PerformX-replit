@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -1510,6 +1511,25 @@ export default function RecipesScreen() {
     setPrefModalVisible(false);
   };
 
+  const deletePref = () => {
+    Alert.alert(
+      "Delete Meal Preference",
+      "This will permanently remove your saved meal preferences. You can always add them again later.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            await AsyncStorage.removeItem(PREF_KEY);
+            setSavedPref(null);
+          },
+        },
+      ]
+    );
+  };
+
   const sharePref = async (pref: MealPreference) => {
     const lines = [
       "My Meal Preferences — BioHack",
@@ -1666,20 +1686,29 @@ export default function RecipesScreen() {
                   ) : null}
                 </View>
 
+                {/* Primary action */}
+                <Pressable
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); sharePref(savedPref); }}
+                  style={[sStyles.prefBtn, sStyles.prefBtnShare, { backgroundColor: colors.tint }]}
+                >
+                  <Ionicons name="share-social-outline" size={16} color="#000" />
+                  <Text style={[sStyles.prefBtnText, { color: "#000", fontFamily: "Outfit_800ExtraBold" }]}>Share with Dietician</Text>
+                </Pressable>
+                {/* Secondary actions */}
                 <View style={sStyles.prefBtnRow}>
                   <Pressable
-                    onPress={() => setPrefModalVisible(true)}
-                    style={[sStyles.prefBtn, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPrefModalVisible(true); }}
+                    style={[sStyles.prefBtn, sStyles.prefBtnSecondary, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}
                   >
-                    <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
+                    <Ionicons name="pencil-outline" size={15} color={colors.textSecondary} />
                     <Text style={[sStyles.prefBtnText, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Edit</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); sharePref(savedPref); }}
-                    style={[sStyles.prefBtn, sStyles.prefBtnShare, { backgroundColor: colors.tint }]}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); deletePref(); }}
+                    style={[sStyles.prefBtn, sStyles.prefBtnSecondary, sStyles.prefBtnDelete, { borderColor: "#FF3B3022" }]}
                   >
-                    <Ionicons name="share-social-outline" size={16} color="#000" />
-                    <Text style={[sStyles.prefBtnText, { color: "#000", fontFamily: "Outfit_800ExtraBold" }]}>Share with Dietician</Text>
+                    <Ionicons name="trash-outline" size={15} color="#FF3B30" />
+                    <Text style={[sStyles.prefBtnText, { color: "#FF3B30", fontFamily: "Outfit_600SemiBold" }]}>Delete</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1821,6 +1850,8 @@ const sStyles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  prefBtnShare: { flex: 1, justifyContent: "center", borderWidth: 0 },
+  prefBtnShare: { justifyContent: "center", borderWidth: 0 },
+  prefBtnSecondary: { flex: 1, justifyContent: "center" },
+  prefBtnDelete: { backgroundColor: "transparent" },
   prefBtnText: { fontSize: 14 },
 });
