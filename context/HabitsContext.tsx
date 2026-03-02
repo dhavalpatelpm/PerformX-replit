@@ -18,6 +18,7 @@ export interface Habit {
   icon: string;
   completedDates: string[];
   createdAt: string;
+  scheduledDays?: number[]; // 0=Mon … 6=Sun; undefined = every day
 }
 
 interface HabitsContextValue {
@@ -36,6 +37,8 @@ interface HabitsContextValue {
 
 const HabitsContext = createContext<HabitsContextValue | null>(null);
 const STORAGE_KEY = "@biohack_habits";
+const SEED_VERSION_KEY = "@biohack_seed_version";
+const CURRENT_SEED_VERSION = "v3";
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
@@ -78,92 +81,105 @@ function normalizeIcon(icon: string): string {
   return ICON_NORMALIZE[icon] ?? icon;
 }
 
-const DEFAULT_HABITS: Habit[] = [
-  {
-    id: "1",
-    name: "Heavy Compound Lift",
-    category: "Training",
-    icon: "barbell-outline",
+function makeId() {
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+}
+
+function h(
+  name: string,
+  category: HabitCategory,
+  icon: string,
+  scheduledDays?: number[]
+): Habit {
+  return {
+    id: makeId(),
+    name,
+    category,
+    icon,
     completedDates: [],
     createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Cold Shower 3 min",
-    category: "Recovery",
-    icon: "thermometer-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    name: "High Protein Meal",
-    category: "Nutrition",
-    icon: "leaf-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    name: "10 min Meditation",
-    category: "Mental",
-    icon: "body-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    name: "HIIT / Cardio Session",
-    category: "Training",
-    icon: "flame-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "6",
-    name: "8h Sleep Logged",
-    category: "Recovery",
-    icon: "moon-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "7",
-    name: "3L Water Intake",
-    category: "Nutrition",
-    icon: "water-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "8",
-    name: "Journaling",
-    category: "Mental",
-    icon: "book-outline",
-    completedDates: [],
-    createdAt: new Date().toISOString(),
-  },
+    scheduledDays,
+  };
+}
+
+// All-day habits (repeat every day)
+const DAILY_HABITS: Habit[] = [
+  // Work
+  h("CAT Prep", "Work", "book-outline"),
+  h("Product Management", "Work", "briefcase-outline"),
+  h("Business Analytics", "Work", "stats-chart-outline"),
+  // Recovery
+  h("Cold Shower 3 min", "Recovery", "water-outline"),
+  h("8 hrs Sleep", "Recovery", "moon-outline"),
+  // Nutrition
+  h("High Protein Meal", "Nutrition", "restaurant-outline"),
+  h("3L Water Intake", "Nutrition", "water-outline"),
+  // Mental
+  h("10 min Meditation", "Mental", "sparkles-outline"),
+  h("Journaling", "Mental", "pencil-outline"),
+  // Personal
+  h("Networking — Talk with Founders", "Personal", "people-outline"),
+  h("Social Media", "Personal", "phone-portrait-outline"),
+  h("Family Time", "Personal", "home-outline"),
 ];
+
+// Training habits scheduled per day (0=Mon … 6=Sun)
+const TRAINING_HABITS: Habit[] = [
+  // Monday — Chest
+  h("Chest Workout", "Training", "barbell-outline", [0]),
+  h("Aerobics Activity", "Training", "bicycle-outline", [0]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [0]),
+  // Tuesday — Back
+  h("Back Workout", "Training", "barbell-outline", [1]),
+  h("Activity-1", "Training", "walk-outline", [1]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [1]),
+  // Wednesday — Shoulders
+  h("Shoulder Workout", "Training", "barbell-outline", [2]),
+  h("Zumba", "Training", "body-outline", [2]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [2]),
+  // Thursday — Triceps + Core
+  h("Triceps + Core Workout", "Training", "barbell-outline", [3]),
+  h("Activity-2", "Training", "walk-outline", [3]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [3]),
+  // Friday — Biceps + Forearms
+  h("Biceps + Forearms Workout", "Training", "barbell-outline", [4]),
+  h("Activity-3", "Training", "walk-outline", [4]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [4]),
+  // Saturday — Legs
+  h("Legs Workout", "Training", "barbell-outline", [5]),
+  h("Yoga", "Training", "body-outline", [5]),
+  h("HIIT / Cardio Session", "Training", "flame-outline", [5]),
+  // Sunday — Active Recovery
+  h("Recovery + Personality Development", "Training", "accessibility-outline", [6]),
+];
+
+const DEFAULT_HABITS: Habit[] = [...TRAINING_HABITS, ...DAILY_HABITS];
 
 export function HabitsProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>(DEFAULT_HABITS);
   const todayKey = getTodayKey();
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-      if (val) {
-        try {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const normalized = parsed.map((h: Habit) => ({
-              ...h,
-              icon: normalizeIcon(h.icon),
-            }));
-            setHabits(normalized);
+    (async () => {
+      try {
+        const seedVersion = await AsyncStorage.getItem(SEED_VERSION_KEY);
+        if (seedVersion !== CURRENT_SEED_VERSION) {
+          // Fresh seed — replace with new schedule
+          const fresh = DEFAULT_HABITS.map(h => ({ ...h, id: makeId() }));
+          setHabits(fresh);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+          await AsyncStorage.setItem(SEED_VERSION_KEY, CURRENT_SEED_VERSION);
+        } else {
+          const val = await AsyncStorage.getItem(STORAGE_KEY);
+          if (val) {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setHabits(parsed.map((h: Habit) => ({ ...h, icon: normalizeIcon(h.icon) })));
+            }
           }
-        } catch {}
-      }
-    });
+        }
+      } catch {}
+    })();
   }, []);
 
   const persist = useCallback((updated: Habit[]) => {
@@ -197,6 +213,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         icon,
         completedDates: [],
         createdAt: new Date().toISOString(),
+        // no scheduledDays → shows every day
       };
       setHabits((prev) => {
         const updated = [...prev, newHabit];
@@ -244,9 +261,14 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   );
 
   const getTodayProgress = useCallback(() => {
-    if (!habits.length) return 0;
-    const done = habits.filter((h) => h.completedDates.includes(todayKey)).length;
-    return done / habits.length;
+    const dow = new Date().getDay();
+    const dayIndex = dow === 0 ? 6 : dow - 1;
+    const todayHabits = habits.filter(
+      (h) => !h.scheduledDays || h.scheduledDays.includes(dayIndex)
+    );
+    if (!todayHabits.length) return 0;
+    const done = todayHabits.filter((h) => h.completedDates.includes(todayKey)).length;
+    return done / todayHabits.length;
   }, [habits, todayKey]);
 
   const getCompletedDays = useCallback(() => {

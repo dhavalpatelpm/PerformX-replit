@@ -508,13 +508,28 @@ export default function TodayScreen() {
     });
   }, []);
 
-  const completedCount = habits.filter(h => isCompletedOnDate(h, selectedDay)).length;
-  const progress = habits.length ? completedCount / habits.length : 0;
+  // Day index: 0=Mon … 6=Sun
+  const selectedDayIndex = useMemo(() => {
+    const dow = new Date(selectedDay + "T00:00:00").getDay();
+    return dow === 0 ? 6 : dow - 1;
+  }, [selectedDay]);
 
-  const filtered =
-    selectedCategory === "All"
-      ? habits
-      : habits.filter((h) => h.category === selectedCategory);
+  // Habits scheduled for the selected day
+  const dayHabits = useMemo(
+    () => habits.filter((h) => !h.scheduledDays || h.scheduledDays.includes(selectedDayIndex)),
+    [habits, selectedDayIndex]
+  );
+
+  const completedCount = dayHabits.filter((h) => isCompletedOnDate(h, selectedDay)).length;
+  const progress = dayHabits.length ? completedCount / dayHabits.length : 0;
+
+  const filtered = useMemo(
+    () =>
+      selectedCategory === "All"
+        ? dayHabits
+        : dayHabits.filter((h) => h.category === selectedCategory),
+    [dayHabits, selectedCategory]
+  );
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -533,7 +548,7 @@ export default function TodayScreen() {
       .filter(isCompletedToday)
       .map((h) => `  ${h.name}`)
       .join("\n");
-    const msg = `BioHack Daily Check-in\n${new Date().toDateString()}\n\nCompleted ${completedCount}/${habits.length} habits:\n${lines || "  No habits completed yet"}\n\nTracking my gains with BioHack!`;
+    const msg = `BioHack Daily Check-in\n${new Date().toDateString()}\n\nCompleted ${completedCount}/${dayHabits.length} habits:\n${lines || "  No habits completed yet"}\n\nTracking my gains with BioHack!`;
     try {
       await Share.share({ message: msg });
     } catch {}
@@ -578,7 +593,7 @@ export default function TodayScreen() {
               Daily Progress
             </Text>
             <Text style={[styles.progressSub, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
-              {completedCount} of {habits.length} habits done
+              {completedCount} of {dayHabits.length} habits done
             </Text>
             <View style={[styles.progressBarWrap, { backgroundColor: colors.border }]}>
               <View
@@ -722,7 +737,7 @@ export default function TodayScreen() {
           )}
         </View>
 
-        {habits.length > 0 && (
+        {dayHabits.length > 0 && (
           <View style={styles.swipeHint}>
             <View style={styles.swipeHintInner}>
               <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
