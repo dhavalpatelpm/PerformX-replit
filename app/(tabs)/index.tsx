@@ -478,6 +478,14 @@ function SwipeableHabitRow({
                   {habit.category}
                 </Text>
               </View>
+              {!!habit.timeSlot && (
+                <View style={styles.timeSlotRow}>
+                  <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+                  <Text style={[styles.timeSlotText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                    {habit.timeSlot}
+                  </Text>
+                </View>
+              )}
               {streak > 0 && (
                 <View style={styles.streakBadge}>
                   <Ionicons name="flame" size={12} color="#FF6B35" />
@@ -487,14 +495,6 @@ function SwipeableHabitRow({
                 </View>
               )}
             </View>
-            {!!habit.timeSlot && (
-              <View style={styles.timeSlotRow}>
-                <Ionicons name="time-outline" size={11} color={colors.textMuted} />
-                <Text style={[styles.timeSlotText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-                  {habit.timeSlot}
-                </Text>
-              </View>
-            )}
           </View>
           <Pressable
             onPress={() => {
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
   catBadgeText: { fontSize: 11 },
   streakBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   streakText: { fontSize: 12 },
-  timeSlotRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 },
+  timeSlotRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   timeSlotText: { fontSize: 11 },
   checkbox: {
     width: 30,
