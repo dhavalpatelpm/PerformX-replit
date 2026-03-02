@@ -8,7 +8,9 @@ import {
   Platform,
   Share,
   Switch,
+  Image,
 } from "react-native";
+import { router } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -216,11 +218,19 @@ export default function ProfileScreen() {
               </Text>
             ) : null}
           </View>
-          <View style={[pStyles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "55" }]}>
-            <Text style={[pStyles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
-              {getInitials()}
-            </Text>
-          </View>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/profile-edit"); }}
+            style={[pStyles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "55" }]}
+            hitSlop={6}
+          >
+            {profile?.profilePicUri ? (
+              <Image source={{ uri: profile.profilePicUri }} style={pStyles.avatarImg} />
+            ) : (
+              <Text style={[pStyles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+                {getInitials()}
+              </Text>
+            )}
+          </Pressable>
         </View>
 
         <View style={[pStyles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -511,8 +521,9 @@ const pStyles = StyleSheet.create({
   heroStatNum: { fontSize: 24 },
   heroStatLabel: { fontSize: 11, textAlign: "center" },
   profileSubtitle: { fontSize: 13, marginTop: 2 },
-  avatarCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  avatarText: { fontSize: 18 },
+  avatarCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" },
+  avatarImg:    { width: 48, height: 48, borderRadius: 24 },
+  avatarText:   { fontSize: 18 },
   sectionHead: { fontSize: 18, marginBottom: 12 },
   catCard: { borderRadius: 20, padding: 16, marginBottom: 24, borderWidth: 1, gap: 14 },
   catRow: { flexDirection: "row", alignItems: "center", gap: 12 },

@@ -10,7 +10,9 @@ import {
   Platform,
   Animated,
   PanResponder,
+  Image,
 } from "react-native";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -654,11 +656,19 @@ export default function TodayScreen() {
               {dateStr}
             </Text>
           </View>
-          <View style={[styles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "60" }]}>
-            <Text style={[styles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
-              {getInitials()}
-            </Text>
-          </View>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/profile-edit"); }}
+            style={[styles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "60" }]}
+            hitSlop={6}
+          >
+            {profile?.profilePicUri ? (
+              <Image source={{ uri: profile.profilePicUri }} style={styles.avatarImg} />
+            ) : (
+              <Text style={[styles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+                {getInitials()}
+              </Text>
+            )}
+          </Pressable>
         </View>
 
         <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -864,8 +874,9 @@ const styles = StyleSheet.create({
   greetingLabel: { fontSize: 13, marginBottom: 2 },
   dayLabel: { fontSize: 14, marginBottom: 2 },
   dateLabel: { fontSize: 28 },
-  avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  avatarText: { fontSize: 16 },
+  avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" },
+  avatarImg:    { width: 44, height: 44, borderRadius: 22 },
+  avatarText:   { fontSize: 16 },
   progressCard: {
     borderRadius: 20,
     padding: 20,

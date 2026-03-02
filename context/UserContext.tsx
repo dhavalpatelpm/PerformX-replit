@@ -17,6 +17,13 @@ export interface UserProfile {
   age: string;
   weightKg: string;
   heightCm: string;
+  profilePicUri?: string;
+}
+
+export interface BMIResult {
+  value: number;
+  category: string;
+  color: string;
 }
 
 interface UserContextType {
@@ -25,10 +32,24 @@ interface UserContextType {
   loading: boolean;
   saveProfile: (p: UserProfile) => Promise<void>;
   getInitials: () => string;
-  getBMI: () => { value: number; category: string; color: string } | null;
+  getBMI: (overrideWeight?: string, overrideHeight?: string) => BMIResult | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export function computeBMI(weightKg: string, heightCm: string): BMIResult | null {
+  const w = parseFloat(weightKg);
+  const h = parseFloat(heightCm) / 100;
+  if (!w || !h || h <= 0) return null;
+  const bmi = w / (h * h);
+  let category = "Normal";
+  let color = "#00E676";
+  if (bmi < 18.5)      { category = "Underweight"; color = "#00B4D8"; }
+  else if (bmi < 25)   { category = "Normal";      color = "#00E676"; }
+  else if (bmi < 30)   { category = "Overweight";  color = "#FFB300"; }
+  else                 { category = "Obese";        color = "#FF3B30"; }
+  return { value: Math.round(bmi * 10) / 10, category, color };
+}
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -58,31 +79,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }, [profile]);
 
-  const getBMI = useCallback(() => {
-    if (!profile) return null;
-    const w = parseFloat(profile.weightKg);
-    const h = parseFloat(profile.heightCm) / 100;
-    if (!w || !h || h <= 0) return null;
-    const bmi = w / (h * h);
-    let category = "Normal";
-    let color = "#00E676";
-    if (bmi < 18.5) { category = "Underweight"; color = "#00B4D8"; }
-    else if (bmi < 25) { category = "Normal"; color = "#00E676"; }
-    else if (bmi < 30) { category = "Overweight"; color = "#FFB300"; }
-    else { category = "Obese"; color = "#FF3B30"; }
-    return { value: Math.round(bmi * 10) / 10, category, color };
-  }, [profile]);
+  const getBMI = useCallback(
+    (overrideWeight?: string, overrideHeight?: string): BMIResult | null => {
+      const w = overrideWeight ?? profile?.weightKg ?? "";
+      const h = overrideHeight ?? profile?.heightCm ?? "";
+      return computeBMI(w, h);
+    },
+    [profile]
+  );
 
   return (
     <UserContext.Provider
-      value={{
-        profile,
-        isOnboarded: !!profile,
-        loading,
-        saveProfile,
-        getInitials,
-        getBMI,
-      }}
+      value={{ profile, isOnboarded: !!profile, loading, saveProfile, getInitials, getBMI }}
     >
       {children}
     </UserContext.Provider>
