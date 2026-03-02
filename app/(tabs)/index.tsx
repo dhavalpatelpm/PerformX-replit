@@ -420,7 +420,7 @@ function HabitForm({
             >
               <Ionicons
                 name={ic as any}
-                size={20}
+                size={18}
                 color={active ? activeColor : colors.textSecondary}
               />
               <Text
@@ -429,7 +429,7 @@ function HabitForm({
                   fontSize: 9,
                   fontFamily: "Outfit_500Medium",
                   color: active ? activeColor : colors.textMuted,
-                  marginTop: 4,
+                  marginTop: 2,
                   textAlign: "center",
                 }}
               >
@@ -1363,12 +1363,12 @@ const styles = StyleSheet.create({
   iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   iconBtn: {
     width: ICON_SIZE,
-    height: ICON_SIZE + 24,
+    height: ICON_SIZE,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   submitBtn: {
     borderRadius: 16,
