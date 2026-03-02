@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,22 +18,28 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/context/ThemeContext";
 import { useHabits, Habit, HabitCategory } from "@/context/HabitsContext";
 
-const CATEGORIES: HabitCategory[] = ["Training", "Recovery", "Nutrition", "Mental"];
+// Alphabetical order (All prepended at render time)
+const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recovery", "Training", "Work"];
 const SWIPE_THRESHOLD = 55;
 const ACTION_WIDTH = 80;
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const CATEGORY_COLORS: Record<HabitCategory, string> = {
-  Training: "#FF6B35",
-  Recovery: "#00B4D8",
-  Nutrition: "#00E676",
   Mental: "#B388FF",
+  Nutrition: "#00E676",
+  Personal: "#FF6B9D",
+  Recovery: "#00B4D8",
+  Training: "#FF6B35",
+  Work: "#FFB300",
 };
 
 const CATEGORY_ICONS: Record<HabitCategory, string> = {
-  Training: "flame-outline",
-  Recovery: "water-outline",
-  Nutrition: "leaf-outline",
   Mental: "sparkles-outline",
+  Nutrition: "leaf-outline",
+  Personal: "heart-outline",
+  Recovery: "water-outline",
+  Training: "flame-outline",
+  Work: "briefcase-outline",
 };
 
 const HABIT_ICONS = [
@@ -275,20 +281,23 @@ function EditHabitModal({
 
 function SwipeableHabitRow({
   habit,
+  selectedDay,
   onEdit,
   onDelete,
   onSwipeActive,
   onSwipeEnd,
 }: {
   habit: Habit;
+  selectedDay: string;
   onEdit: () => void;
   onDelete: () => void;
   onSwipeActive: () => void;
   onSwipeEnd: () => void;
 }) {
   const { colors } = useTheme();
-  const { toggleHabit, getStreak, isCompletedToday } = useHabits();
-  const done = isCompletedToday(habit);
+  const { toggleHabit, getStreak, isCompletedOnDate, todayKey } = useHabits();
+  const done = isCompletedOnDate(habit, selectedDay);
+  const isToday = selectedDay === todayKey;
   const streak = getStreak(habit);
   const catColor = CATEGORY_COLORS[habit.category];
 
@@ -366,6 +375,10 @@ function SwipeableHabitRow({
   const handlePress = () => {
     if (snappedOffset.current !== 0) {
       close();
+      return;
+    }
+    if (!isToday) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       return;
     }
     Haptics.impactAsync(done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
@@ -473,16 +486,30 @@ function SwipeableHabitRow({
 
 export default function TodayScreen() {
   const { colors } = useTheme();
-  const { habits, getTodayProgress, isCompletedToday, removeHabit } = useHabits();
+  const { habits, isCompletedOnDate, todayKey, removeHabit } = useHabits();
   const insets = useSafeAreaInsets();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<HabitCategory | "All">("All");
+  const [selectedDay, setSelectedDay] = useState<string>(todayKey);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const activeSwipes = useRef(0);
 
-  const progress = getTodayProgress();
-  const completedCount = habits.filter(isCompletedToday).length;
+  // Build Mon–Sun for current week
+  const weekDays = useMemo(() => {
+    const today = new Date();
+    const dow = today.getDay(); // 0=Sun
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d.toISOString().split("T")[0]; // "YYYY-MM-DD"
+    });
+  }, []);
+
+  const completedCount = habits.filter(h => isCompletedOnDate(h, selectedDay)).length;
+  const progress = habits.length ? completedCount / habits.length : 0;
 
   const filtered =
     selectedCategory === "All"
@@ -595,6 +622,42 @@ export default function TodayScreen() {
           </View>
         </View>
 
+        {/* Day of week strip */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.weekFilterRow}
+        >
+          {weekDays.map((dateKey, i) => {
+            const isSelected = selectedDay === dateKey;
+            const isTod = dateKey === todayKey;
+            return (
+              <Pressable
+                key={dateKey}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedDay(dateKey); }}
+                style={[
+                  styles.weekDayChip,
+                  {
+                    backgroundColor: isSelected ? colors.tint : colors.card,
+                    borderColor: isSelected ? colors.tint : isTod ? colors.tint + "55" : colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.weekDayName, { color: isSelected ? "#000" : isTod ? colors.tint : colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+                  {DAY_LABELS[i]}
+                </Text>
+                <Text style={[styles.weekDayNum, { color: isSelected ? "#000" : isTod ? colors.tint : colors.textMuted, fontFamily: "Outfit_800ExtraBold" }]}>
+                  {parseInt(dateKey.split("-")[2], 10)}
+                </Text>
+                {isTod && !isSelected && (
+                  <View style={[styles.weekDayDot, { backgroundColor: colors.tint }]} />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* Category filter */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -649,6 +712,7 @@ export default function TodayScreen() {
               <SwipeableHabitRow
                 key={habit.id}
                 habit={habit}
+                selectedDay={selectedDay}
                 onSwipeActive={handleSwipeActive}
                 onSwipeEnd={handleSwipeEnd}
                 onEdit={() => setEditingHabit(habit)}
@@ -741,6 +805,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ringLabel: { fontSize: 22, zIndex: 1 },
+  weekFilterRow: { paddingBottom: 12, gap: 8 },
+  weekDayChip: {
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    minWidth: 52,
+    gap: 2,
+  },
+  weekDayName: { fontSize: 11, letterSpacing: 0.4 },
+  weekDayNum: { fontSize: 18, lineHeight: 22 },
+  weekDayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
   catFilterRow: { paddingBottom: 14, gap: 8 },
   filterChip: {
     flexDirection: "row",

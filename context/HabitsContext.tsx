@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type HabitCategory = "Training" | "Recovery" | "Nutrition" | "Mental";
+export type HabitCategory = "Training" | "Recovery" | "Nutrition" | "Mental" | "Personal" | "Work";
 
 export interface Habit {
   id: string;
@@ -29,6 +29,7 @@ interface HabitsContextValue {
   removeHabit: (id: string) => void;
   getStreak: (habit: Habit) => number;
   isCompletedToday: (habit: Habit) => boolean;
+  isCompletedOnDate: (habit: Habit, dateKey: string) => boolean;
   getTodayProgress: () => number;
   getCompletedDays: () => Set<string>;
 }
@@ -237,6 +238,11 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     [todayKey]
   );
 
+  const isCompletedOnDate = useCallback(
+    (habit: Habit, dateKey: string) => habit.completedDates.includes(dateKey),
+    []
+  );
+
   const getTodayProgress = useCallback(() => {
     if (!habits.length) return 0;
     const done = habits.filter((h) => h.completedDates.includes(todayKey)).length;
@@ -259,6 +265,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       removeHabit,
       getStreak,
       isCompletedToday,
+      isCompletedOnDate,
       getTodayProgress,
       getCompletedDays,
     }),
@@ -271,6 +278,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       removeHabit,
       getStreak,
       isCompletedToday,
+      isCompletedOnDate,
       getTodayProgress,
       getCompletedDays,
     ]
