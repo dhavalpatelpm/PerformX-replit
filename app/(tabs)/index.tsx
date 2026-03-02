@@ -20,6 +20,19 @@ import { useHabits, Habit, HabitCategory } from "@/context/HabitsContext";
 
 // Alphabetical order (All prepended at render time)
 const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recovery", "Training", "Work"];
+
+function parseTimeSlotMinutes(slot?: string): number {
+  if (!slot || slot.toLowerCase() === "anytime") return Infinity;
+  const start = slot.split(/\s*[–\-]\s*/)[0].trim();
+  const match = start.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (!match) return Infinity;
+  let hrs = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+  const mer = match[3].toUpperCase();
+  if (mer === "AM" && hrs === 12) hrs = 0;
+  if (mer === "PM" && hrs !== 12) hrs += 12;
+  return hrs * 60 + mins;
+}
 const SWIPE_THRESHOLD = 55;
 const ACTION_WIDTH = 80;
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -558,13 +571,15 @@ export default function TodayScreen() {
   const completedCount = dayHabits.filter((h) => isCompletedOnDate(h, selectedDay)).length;
   const progress = dayHabits.length ? completedCount / dayHabits.length : 0;
 
-  const filtered = useMemo(
-    () =>
+  const filtered = useMemo(() => {
+    const list =
       selectedCategory === "All"
         ? dayHabits
-        : dayHabits.filter((h) => h.category === selectedCategory),
-    [dayHabits, selectedCategory]
-  );
+        : dayHabits.filter((h) => h.category === selectedCategory);
+    return [...list].sort(
+      (a, b) => parseTimeSlotMinutes(a.timeSlot) - parseTimeSlotMinutes(b.timeSlot)
+    );
+  }, [dayHabits, selectedCategory]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
