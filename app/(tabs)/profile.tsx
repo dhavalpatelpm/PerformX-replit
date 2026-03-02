@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
 import { useHabits, HabitCategory } from "@/context/HabitsContext";
+import { useUser } from "@/context/UserContext";
 
 const CATEGORY_COLORS: Record<HabitCategory, string> = {
   Training: "#FF6B35",
@@ -101,9 +102,11 @@ const scStyles = StyleSheet.create({
 export default function ProfileScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const { habits, getStreak, getTodayProgress, getCompletedDays } = useHabits();
+  const { profile, getBMI, getInitials } = useUser();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
+  const bmi = getBMI();
 
   const [notifGranted, setNotifGranted] = useState(false);
 
@@ -205,15 +208,18 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={pStyles.header}>
-          <Text style={[pStyles.title, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Stats</Text>
-          <View style={pStyles.headerRight}>
-            <Pressable
-              onPress={handleShare}
-              style={[pStyles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              hitSlop={8}
-            >
-              <Ionicons name="share-outline" size={20} color={colors.tint} />
-            </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={[pStyles.title, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Stats</Text>
+            {profile?.name ? (
+              <Text style={[pStyles.profileSubtitle, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                {profile.profession ? `${profile.name} · ${profile.profession}` : profile.name}
+              </Text>
+            ) : null}
+          </View>
+          <View style={[pStyles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "55" }]}>
+            <Text style={[pStyles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+              {getInitials()}
+            </Text>
           </View>
         </View>
 
@@ -251,6 +257,72 @@ export default function ProfileScreen() {
             ))}
           </View>
         </View>
+
+        {bmi && (
+          <>
+            <Text style={[pStyles.sectionHead, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
+              Body Mass Index
+            </Text>
+            <View style={[pStyles.bmiCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <LinearGradient
+                colors={[bmi.color + "20", "transparent"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={pStyles.bmiTop}>
+                <View>
+                  <Text style={[pStyles.bmiLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>
+                    Your BMI
+                  </Text>
+                  <Text style={[pStyles.bmiValue, { color: bmi.color, fontFamily: "Outfit_800ExtraBold" }]}>
+                    {bmi.value}
+                  </Text>
+                  <View style={[pStyles.bmiCatPill, { backgroundColor: bmi.color + "22" }]}>
+                    <Text style={[pStyles.bmiCatText, { color: bmi.color, fontFamily: "Outfit_700Bold" }]}>
+                      {bmi.category}
+                    </Text>
+                  </View>
+                </View>
+                <View style={pStyles.bmiDetails}>
+                  {[
+                    { label: "Weight", value: `${profile?.weightKg} kg`, icon: "scale-outline" },
+                    { label: "Height", value: `${profile?.heightCm} cm`, icon: "resize-outline" },
+                    { label: "Age",    value: `${profile?.age} yrs`,     icon: "calendar-outline" },
+                  ].map(d => (
+                    <View key={d.label} style={pStyles.bmiDetailRow}>
+                      <Ionicons name={d.icon as any} size={14} color={colors.textMuted} />
+                      <Text style={[pStyles.bmiDetailLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>{d.label}</Text>
+                      <Text style={[pStyles.bmiDetailVal, { color: colors.text, fontFamily: "Outfit_600SemiBold" }]}>{d.value}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {/* BMI scale bar */}
+              <View style={pStyles.bmiScaleWrap}>
+                <View style={[pStyles.bmiScaleBar, { backgroundColor: colors.border }]}>
+                  <View style={[pStyles.bmiUnder,  { backgroundColor: "#00B4D8" }]} />
+                  <View style={[pStyles.bmiNormal, { backgroundColor: "#00E676" }]} />
+                  <View style={[pStyles.bmiOver,   { backgroundColor: "#FFB300" }]} />
+                  <View style={[pStyles.bmiObese,  { backgroundColor: "#FF3B30" }]} />
+                  {/* Marker */}
+                  <View style={[
+                    pStyles.bmiMarker,
+                    {
+                      left: `${Math.min(Math.max((bmi.value - 10) / 30 * 100, 1), 99)}%` as any,
+                      backgroundColor: "#fff",
+                    },
+                  ]} />
+                </View>
+                <View style={pStyles.bmiScaleLabels}>
+                  {["10", "18.5", "25", "30", "40"].map(l => (
+                    <Text key={l} style={[pStyles.bmiScaleLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>{l}</Text>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </>
+        )}
 
         <Text style={[pStyles.sectionHead, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
           By Category
@@ -438,6 +510,9 @@ const pStyles = StyleSheet.create({
   heroStat: { flex: 1, alignItems: "center", gap: 4 },
   heroStatNum: { fontSize: 24 },
   heroStatLabel: { fontSize: 11, textAlign: "center" },
+  profileSubtitle: { fontSize: 13, marginTop: 2 },
+  avatarCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  avatarText: { fontSize: 18 },
   sectionHead: { fontSize: 18, marginBottom: 12 },
   catCard: { borderRadius: 20, padding: 16, marginBottom: 24, borderWidth: 1, gap: 14 },
   catRow: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -460,4 +535,23 @@ const pStyles = StyleSheet.create({
   divider: { height: 1 },
   versionCard: { borderRadius: 14, padding: 14, borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   versionText: { fontSize: 13, flex: 1 },
+  bmiCard: { borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, overflow: "hidden" },
+  bmiTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
+  bmiLabel: { fontSize: 13, marginBottom: 4 },
+  bmiValue: { fontSize: 48, lineHeight: 56 },
+  bmiCatPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: "flex-start", marginTop: 6 },
+  bmiCatText: { fontSize: 13 },
+  bmiDetails: { gap: 10, alignItems: "flex-end" },
+  bmiDetailRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  bmiDetailLabel: { fontSize: 12 },
+  bmiDetailVal: { fontSize: 13 },
+  bmiScaleWrap: { gap: 6 },
+  bmiScaleBar: { height: 10, borderRadius: 5, overflow: "hidden", flexDirection: "row", position: "relative" },
+  bmiUnder:  { flex: 17 },
+  bmiNormal: { flex: 65 },
+  bmiOver:   { flex: 50 },
+  bmiObese:  { flex: 100 },
+  bmiMarker: { position: "absolute", top: -3, width: 4, height: 16, borderRadius: 2 },
+  bmiScaleLabels: { flexDirection: "row", justifyContent: "space-between" },
+  bmiScaleLabel: { fontSize: 10 },
 });

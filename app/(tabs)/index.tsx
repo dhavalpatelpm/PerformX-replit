@@ -8,7 +8,6 @@ import {
   Modal,
   TextInput,
   Platform,
-  Share,
   Animated,
   PanResponder,
 } from "react-native";
@@ -17,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/context/ThemeContext";
 import { useHabits, Habit, HabitCategory } from "@/context/HabitsContext";
+import { useUser } from "@/context/UserContext";
 
 // Alphabetical order (All prepended at render time)
 const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recovery", "Training", "Work"];
@@ -563,6 +563,7 @@ function SwipeableHabitRow({
 export default function TodayScreen() {
   const { colors } = useTheme();
   const { habits, isCompletedOnDate, todayKey, removeHabit } = useHabits();
+  const { profile, getInitials } = useUser();
   const insets = useSafeAreaInsets();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -621,20 +622,12 @@ export default function TodayScreen() {
     if (activeSwipes.current === 0) setScrollEnabled(true);
   }, []);
 
-  const handleShare = async () => {
-    const lines = habits
-      .filter(isCompletedToday)
-      .map((h) => `  ${h.name}`)
-      .join("\n");
-    const msg = `BioHack Daily Check-in\n${new Date().toDateString()}\n\nCompleted ${completedCount}/${dayHabits.length} habits:\n${lines || "  No habits completed yet"}\n\nTracking my gains with BioHack!`;
-    try {
-      await Share.share({ message: msg });
-    } catch {}
-  };
-
-  const today = new Date();
-  const dayName = today.toLocaleDateString("en-US", { weekday: "long" });
-  const dateStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const today    = new Date();
+  const dayName  = today.toLocaleDateString("en-US", { weekday: "long" });
+  const dateStr  = today.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const hour     = today.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = profile?.name.trim().split(/\s+/)[0] ?? "";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -648,7 +641,12 @@ export default function TodayScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
+            {firstName ? (
+              <Text style={[styles.greetingLabel, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
+                {greeting}, {firstName}
+              </Text>
+            ) : null}
             <Text style={[styles.dayLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>
               {dayName}
             </Text>
@@ -656,13 +654,11 @@ export default function TodayScreen() {
               {dateStr}
             </Text>
           </View>
-          <Pressable
-            onPress={handleShare}
-            style={[styles.iconCircle, { backgroundColor: colors.card, borderColor: colors.border }]}
-            hitSlop={8}
-          >
-            <Ionicons name="share-outline" size={20} color={colors.tint} />
-          </Pressable>
+          <View style={[styles.avatarCircle, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "60" }]}>
+            <Text style={[styles.avatarText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+              {getInitials()}
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -865,16 +861,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 20,
   },
+  greetingLabel: { fontSize: 13, marginBottom: 2 },
   dayLabel: { fontSize: 14, marginBottom: 2 },
   dateLabel: { fontSize: 28 },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  avatarText: { fontSize: 16 },
   progressCard: {
     borderRadius: 20,
     padding: 20,

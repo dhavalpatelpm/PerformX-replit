@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { HabitsProvider } from "@/context/HabitsContext";
+import { UserProvider, useUser } from "@/context/UserContext";
 import { requestNotificationPermissions } from "@/lib/notifications";
 import {
   useFonts,
@@ -21,9 +22,24 @@ import {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
+  const { isOnboarded, loading } = useUser();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return;
+    const inOnboarding = segments[0] === "onboarding";
+    if (!isOnboarded && !inOnboarding) {
+      router.replace("/onboarding");
+    } else if (isOnboarded && inOnboarding) {
+      router.replace("/(tabs)");
+    }
+  }, [isOnboarded, loading]);
+
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="onboarding" options={{ headerShown: false, animation: "fade" }} />
+      <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -53,13 +69,15 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <HabitsProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </HabitsProvider>
+          <UserProvider>
+            <HabitsProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </HabitsProvider>
+          </UserProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
