@@ -675,7 +675,6 @@ export default function TodayScreen() {
             {!!profile?.profession && (
               <Text
                 style={[styles.avatarProfession, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}
-                numberOfLines={1}
               >
                 {profile.profession}
               </Text>
@@ -904,7 +903,7 @@ const styles = StyleSheet.create({
   dateLabel: { fontSize: 28 },
   avatarColumn: { alignItems: "center", gap: 4 },
   avatarCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" },
-  avatarProfession: { fontSize: 10, textAlign: "center", maxWidth: 70 },
+  avatarProfession: { fontSize: 11, textAlign: "center" },
   avatarImg:    { width: 44, height: 44, borderRadius: 22 },
   avatarText:   { fontSize: 16 },
   progressCard: {
