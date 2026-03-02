@@ -19,6 +19,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "calendar", selected: "calendar.badge.checkmark" }} />
         <Label>Calendar</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="ai">
+        <Icon sf={{ default: "sparkles", selected: "sparkles" }} />
+        <Label>AI Coach</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="recipes">
         <Icon sf={{ default: "fork.knife", selected: "fork.knife.circle.fill" }} />
         <Label>Recipes</Label>
@@ -41,7 +45,7 @@ function ClassicTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.tint,
+        tabBarActiveTintColor: "#00E676",
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           position: "absolute",
@@ -83,6 +87,15 @@ function ClassicTabLayout() {
           title: "Calendar",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ai"
+        options={{
+          title: "AI Coach",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="sparkles" size={size} color={color} />
           ),
         }}
       />
