@@ -34,52 +34,110 @@ const CATEGORY_ICONS: Record<HabitCategory, string> = {
   Mental: "sparkles-outline",
 };
 
-function AnimatedStreakCard({ habit }: { habit: ReturnType<typeof useHabits>["habits"][0] }) {
+function getWeekBounds() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diffToMon);
+  mon.setHours(0, 0, 0, 0);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  sun.setHours(23, 59, 59, 999);
+  return { mon, sun };
+}
+
+function daysInCurrentMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+}
+
+function currentMonthPrefix() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function HabitStreakRow({ habit }: { habit: ReturnType<typeof useHabits>["habits"][0] }) {
   const { colors } = useTheme();
   const { getStreak, isCompletedToday } = useHabits();
-  const streak = getStreak(habit);
-  const done = isCompletedToday(habit);
-  const catColor = CATEGORY_COLORS[habit.category];
-  const totalDone = habit.completedDates.length;
+
+  const dailyStreak  = getStreak(habit);
+  const done         = isCompletedToday(habit);
+  const catColor     = CATEGORY_COLORS[habit.category] ?? "#00E676";
+
+  const { mon, sun } = getWeekBounds();
+  const weeklyCount = habit.completedDates.filter((d) => {
+    const dt = new Date(d + "T00:00:00");
+    return dt >= mon && dt <= sun;
+  }).length;
+  const weeklyMax = habit.scheduledDays ? habit.scheduledDays.length : 7;
+
+  const monthPfx    = currentMonthPrefix();
+  const monthlyCount = habit.completedDates.filter((d) => d.startsWith(monthPfx)).length;
+  const monthlyMax   = daysInCurrentMonth();
+
+  const weeklyPct  = Math.min(weeklyCount  / weeklyMax,  1);
+  const monthlyPct = Math.min(monthlyCount / monthlyMax, 1);
 
   return (
-    <View style={[scStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <LinearGradient
-        colors={[catColor + "20", "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={scStyles.cardTop}>
-        <View style={[scStyles.iconWrap, { backgroundColor: catColor + "25" }]}>
-          <Ionicons name={habit.icon as any} size={22} color={catColor} />
-        </View>
-        {done && (
-          <View style={[scStyles.donePill, { backgroundColor: catColor + "25" }]}>
-            <Ionicons name="checkmark-circle" size={14} color={catColor} />
-            <Text style={[scStyles.doneText, { color: catColor, fontFamily: "Outfit_600SemiBold" }]}>Done</Text>
+    <View style={[scStyles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[scStyles.leftStrip, { backgroundColor: catColor }]} />
+      <View style={scStyles.rowInner}>
+        <View style={scStyles.rowTop}>
+          <View style={[scStyles.iconWrap, { backgroundColor: catColor + "22" }]}>
+            <Ionicons name={habit.icon as any} size={20} color={catColor} />
           </View>
-        )}
-      </View>
-      <Text style={[scStyles.name, { color: colors.text, fontFamily: "Outfit_700Bold" }]} numberOfLines={1}>
-        {habit.name}
-      </Text>
-      <View style={scStyles.statsRow}>
-        <View style={scStyles.statItem}>
-          <View style={scStyles.statIconRow}>
-            <Ionicons name="flame" size={16} color="#FF6B35" />
-            <Text style={[scStyles.bigNum, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-              {streak}
-            </Text>
-          </View>
-          <Text style={[scStyles.statLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>streak</Text>
-        </View>
-        <View style={[scStyles.divider, { backgroundColor: colors.border }]} />
-        <View style={scStyles.statItem}>
-          <Text style={[scStyles.bigNum, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-            {totalDone}
+          <Text style={[scStyles.habitName, { color: colors.text, fontFamily: "Outfit_700Bold" }]} numberOfLines={1}>
+            {habit.name}
           </Text>
-          <Text style={[scStyles.statLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>total</Text>
+          {done && (
+            <View style={[scStyles.donePill, { backgroundColor: catColor + "22" }]}>
+              <Ionicons name="checkmark-circle" size={13} color={catColor} />
+              <Text style={[scStyles.doneText, { color: catColor, fontFamily: "Outfit_600SemiBold" }]}>Done</Text>
+            </View>
+          )}
+        </View>
+        <View style={scStyles.metricsRow}>
+          <View style={[scStyles.metricCol, { borderRightWidth: 1, borderRightColor: colors.border }]}>
+            <View style={scStyles.metricTop}>
+              <Ionicons name="flame" size={13} color="#FF6B35" />
+              <Text style={[scStyles.metricNum, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+                {dailyStreak}
+              </Text>
+            </View>
+            <Text style={[scStyles.metricLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>Daily</Text>
+            <View style={[scStyles.bar, { backgroundColor: colors.border }]}>
+              <View style={[scStyles.barFill, { width: dailyStreak > 0 ? "100%" : "0%", backgroundColor: "#FF6B35" }]} />
+            </View>
+          </View>
+
+          <View style={[scStyles.metricCol, { borderRightWidth: 1, borderRightColor: colors.border }]}>
+            <View style={scStyles.metricTop}>
+              <Ionicons name="calendar-outline" size={13} color={catColor} />
+              <Text style={[scStyles.metricNum, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+                {weeklyCount}<Text style={[scStyles.metricMax, { color: colors.textMuted }]}>/{weeklyMax}</Text>
+              </Text>
+            </View>
+            <Text style={[scStyles.metricLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>Weekly</Text>
+            <View style={[scStyles.bar, { backgroundColor: colors.border }]}>
+              <View style={[scStyles.barFill, { width: `${weeklyPct * 100}%` as any, backgroundColor: catColor }]} />
+            </View>
+          </View>
+
+          <View style={scStyles.metricCol}>
+            <View style={scStyles.metricTop}>
+              <Ionicons name="stats-chart" size={13} color={catColor} />
+              <Text style={[scStyles.metricNum, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
+                {monthlyCount}<Text style={[scStyles.metricMax, { color: colors.textMuted }]}>/{monthlyMax}</Text>
+              </Text>
+            </View>
+            <Text style={[scStyles.metricLabel, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>Monthly</Text>
+            <View style={[scStyles.bar, { backgroundColor: colors.border }]}>
+              <View style={[scStyles.barFill, { width: `${monthlyPct * 100}%` as any, backgroundColor: catColor }]} />
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -87,18 +145,22 @@ function AnimatedStreakCard({ habit }: { habit: ReturnType<typeof useHabits>["ha
 }
 
 const scStyles = StyleSheet.create({
-  card: { borderRadius: 18, padding: 16, borderWidth: 1, overflow: "hidden", width: 160, marginRight: 12, flexShrink: 0 },
-  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  donePill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  doneText: { fontSize: 11 },
-  name: { fontSize: 13, marginBottom: 14, lineHeight: 17 },
-  statsRow: { flexDirection: "row", alignItems: "center" },
-  statItem: { flex: 1, alignItems: "center" },
-  statIconRow: { flexDirection: "row", alignItems: "center", gap: 2 },
-  bigNum: { fontSize: 24 },
-  statLabel: { fontSize: 11, marginTop: 2 },
-  divider: { width: 1, height: 32 },
+  row:        { borderRadius: 16, borderWidth: 1, overflow: "hidden", flexDirection: "row", marginBottom: 10 },
+  leftStrip:  { width: 4 },
+  rowInner:   { flex: 1, padding: 14, gap: 12 },
+  rowTop:     { flexDirection: "row", alignItems: "center", gap: 10 },
+  iconWrap:   { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  habitName:  { flex: 1, fontSize: 14 },
+  donePill:   { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  doneText:   { fontSize: 11 },
+  metricsRow: { flexDirection: "row" },
+  metricCol:  { flex: 1, alignItems: "center", paddingHorizontal: 4, gap: 3 },
+  metricTop:  { flexDirection: "row", alignItems: "center", gap: 3 },
+  metricNum:  { fontSize: 18 },
+  metricMax:  { fontSize: 12 },
+  metricLabel:{ fontSize: 11 },
+  bar:        { height: 3, width: "80%", borderRadius: 2, overflow: "hidden", marginTop: 2 },
+  barFill:    { height: "100%", borderRadius: 2 },
 });
 
 export default function ProfileScreen() {
@@ -364,15 +426,9 @@ export default function ProfileScreen() {
         <Text style={[pStyles.sectionHead, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
           Habit Streaks
         </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={pStyles.streakScrollContent}
-        >
-          {sortedHabits.map((h) => (
-            <AnimatedStreakCard key={h.id} habit={h} />
-          ))}
-        </ScrollView>
+        {sortedHabits.map((h) => (
+          <HabitStreakRow key={h.id} habit={h} />
+        ))}
 
         <Text style={[pStyles.sectionHead, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
           Settings
@@ -548,7 +604,6 @@ const pStyles = StyleSheet.create({
   catCount: { fontSize: 13 },
   catBar: { height: 6, borderRadius: 3, overflow: "hidden" },
   catBarFill: { height: 6, borderRadius: 3 },
-  streakScrollContent: { paddingRight: 16, paddingBottom: 8 },
   settingsCard: { borderRadius: 20, borderWidth: 1, overflow: "hidden", marginBottom: 16 },
   settingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 },
   settingLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
