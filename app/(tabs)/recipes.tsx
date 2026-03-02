@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Alert,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +27,16 @@ type MealType = "Breakfast" | "Brunch" | "Lunch" | "Pre-Workout" | "Post-Workout
 type Macro = { protein: number; carbs: number; fat: number; calories: number };
 
 const PREF_KEY = "@biohack_meal_pref";
+const RECIPE_DELETES_KEY = "@biohack_recipe_deletes";
+const RECIPE_EDITS_KEY = "@biohack_recipe_edits";
+const RC_ACTION_WIDTH = 80;
+const RC_SWIPE_THRESHOLD = 50;
+
+interface RecipeEdit {
+  name?: string;
+  ingredients?: string[];
+  macros?: { protein: number; carbs: number; fat: number; calories: number };
+}
 
 interface MealPreference {
   name: string;
@@ -982,90 +994,333 @@ const mbStyles = StyleSheet.create({
   barFill: { height: 6, borderRadius: 3 },
 });
 
-function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
+// ─── Edit Recipe Modal ────────────────────────────────────────────────────────
+function EditRecipeModal({
+  recipe,
+  visible,
+  onClose,
+  onSave,
+}: {
+  recipe: Recipe | null;
+  visible: boolean;
+  onClose: () => void;
+  onSave: (id: string, edit: RecipeEdit) => void;
+}) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [name, setName] = useState("");
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [newIngredient, setNewIngredient] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
+  const [calories, setCalories] = useState("");
+
+  useEffect(() => {
+    if (recipe) {
+      setName(recipe.name);
+      setIngredients([...recipe.ingredients]);
+      setNewIngredient("");
+      setProtein(String(recipe.macros.protein));
+      setCarbs(String(recipe.macros.carbs));
+      setFat(String(recipe.macros.fat));
+      setCalories(String(recipe.macros.calories));
+    }
+  }, [recipe]);
+
+  const addIngredient = () => {
+    const trimmed = newIngredient.trim();
+    if (!trimmed) return;
+    setIngredients(prev => [...prev, trimmed]);
+    setNewIngredient("");
+  };
+
+  const removeIngredient = (idx: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIngredients(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSave = () => {
+    if (!recipe) return;
+    if (!name.trim()) {
+      Alert.alert("Name required", "Please enter a recipe name.");
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSave(recipe.id, {
+      name: name.trim(),
+      ingredients,
+      macros: {
+        protein: parseInt(protein) || recipe.macros.protein,
+        carbs: parseInt(carbs) || recipe.macros.carbs,
+        fat: parseInt(fat) || recipe.macros.fat,
+        calories: parseInt(calories) || recipe.macros.calories,
+      },
+    });
+  };
+
+  if (!recipe) return null;
+  const mealColor = MEAL_COLORS[recipe.meal];
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <View style={[erStyles.container, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={[erStyles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
+            <Pressable onPress={onClose} style={[erStyles.headerBtn, { backgroundColor: colors.card }]}>
+              <Ionicons name="close" size={18} color={colors.textSecondary} />
+            </Pressable>
+            <View style={erStyles.headerCenter}>
+              <View style={[erStyles.mealDot, { backgroundColor: mealColor }]} />
+              <Text style={[erStyles.headerTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>Edit Recipe</Text>
+            </View>
+            <Pressable onPress={handleSave} style={[erStyles.saveBtn, { backgroundColor: colors.tint }]}>
+              <Text style={[erStyles.saveBtnText, { fontFamily: "Outfit_800ExtraBold" }]}>Save</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={[erStyles.scroll, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled">
+            {/* Name */}
+            <Text style={[erStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>Recipe Name</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={[erStyles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_600SemiBold" }]}
+              placeholderTextColor={colors.textMuted}
+            />
+
+            {/* Macros */}
+            <Text style={[erStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold", marginTop: 20 }]}>Macros (per serving)</Text>
+            <View style={erStyles.macroRow}>
+              {[
+                { label: "Protein (g)", value: protein, setter: setProtein, color: "#FF6B35" },
+                { label: "Carbs (g)", value: carbs, setter: setCarbs, color: "#00B4D8" },
+                { label: "Fat (g)", value: fat, setter: setFat, color: "#B388FF" },
+                { label: "Calories", value: calories, setter: setCalories, color: "#FF9500" },
+              ].map(({ label, value, setter, color }) => (
+                <View key={label} style={erStyles.macroField}>
+                  <Text style={[erStyles.macroLabel, { color, fontFamily: "Outfit_600SemiBold" }]}>{label}</Text>
+                  <TextInput
+                    value={value}
+                    onChangeText={setter}
+                    keyboardType="numeric"
+                    style={[erStyles.macroInput, { backgroundColor: colors.card, borderColor: color + "44", color: colors.text, fontFamily: "Outfit_700Bold" }]}
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
+              ))}
+            </View>
+
+            {/* Ingredients */}
+            <Text style={[erStyles.sectionLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold", marginTop: 20 }]}>
+              Ingredients ({ingredients.length})
+            </Text>
+            {ingredients.map((ing, idx) => (
+              <View key={idx} style={[erStyles.ingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[erStyles.ingBullet, { backgroundColor: mealColor }]} />
+                <Text style={[erStyles.ingText, { color: colors.text, fontFamily: "Outfit_400Regular", flex: 1 }]}>{ing}</Text>
+                <Pressable onPress={() => removeIngredient(idx)} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color="#FF3B30" />
+                </Pressable>
+              </View>
+            ))}
+            {/* Add ingredient row */}
+            <View style={[erStyles.addIngRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <TextInput
+                value={newIngredient}
+                onChangeText={setNewIngredient}
+                onSubmitEditing={addIngredient}
+                returnKeyType="done"
+                placeholder="Add ingredient..."
+                placeholderTextColor={colors.textMuted}
+                style={[erStyles.addIngInput, { color: colors.text, fontFamily: "Outfit_400Regular" }]}
+              />
+              <Pressable onPress={addIngredient} style={[erStyles.addIngBtn, { backgroundColor: colors.tint }]}>
+                <Ionicons name="add" size={18} color="#000" />
+              </Pressable>
+            </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const erStyles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 1 },
+  headerCenter: { flexDirection: "row", alignItems: "center", gap: 8 },
+  mealDot: { width: 10, height: 10, borderRadius: 5 },
+  headerTitle: { fontSize: 17 },
+  headerBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  saveBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 14 },
+  saveBtnText: { fontSize: 14, color: "#000" },
+  scroll: { padding: 16, gap: 6 },
+  sectionLabel: { fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 },
+  input: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16 },
+  macroRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  macroField: { width: "47%", gap: 5 },
+  macroLabel: { fontSize: 11, letterSpacing: 0.4 },
+  macroInput: { borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 11, fontSize: 18, textAlign: "center" },
+  ingRow: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6 },
+  ingBullet: { width: 7, height: 7, borderRadius: 4 },
+  ingText: { fontSize: 14 },
+  addIngRow: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, borderStyle: "dashed", paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
+  addIngInput: { flex: 1, fontSize: 14, paddingVertical: 6 },
+  addIngBtn: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+});
+
+// ─── Swipeable Recipe Card ────────────────────────────────────────────────────
+function RecipeCard({ recipe, onPress, onEdit, onDelete }: {
+  recipe: Recipe;
+  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const { colors } = useTheme();
   const goalColor = GOAL_COLORS[recipe.goal];
   const dietColor = DIET_COLORS[recipe.diet];
   const mealColor = MEAL_COLORS[recipe.meal];
 
+  const translateX = useRef(new Animated.Value(0)).current;
+  const snapped = useRef(0);
+  const onEditRef = useRef(onEdit);
+  onEditRef.current = onEdit;
+  const onDeleteRef = useRef(onDelete);
+  onDeleteRef.current = onDelete;
+
+  const snapTo = (val: number) => {
+    Animated.spring(translateX, { toValue: val, useNativeDriver: false, damping: 22, stiffness: 240, mass: 0.7 }).start();
+  };
+
+  const close = () => { snapped.current = 0; snapTo(0); };
+
+  const isHoriz = (gs: any) => Math.abs(gs.dx) > 6 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.8;
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onStartShouldSetPanResponderCapture: () => false,
+    onMoveShouldSetPanResponderCapture: (_, gs) => isHoriz(gs),
+    onMoveShouldSetPanResponder: (_, gs) => isHoriz(gs),
+    onPanResponderGrant: () => { translateX.stopAnimation(); },
+    onPanResponderMove: (_, gs) => {
+      const clamped = Math.max(-RC_ACTION_WIDTH, Math.min(RC_ACTION_WIDTH, snapped.current + gs.dx));
+      translateX.setValue(clamped);
+    },
+    onPanResponderRelease: (_, gs) => {
+      const base = snapped.current;
+      if (gs.dx < -RC_SWIPE_THRESHOLD && base >= 0) {
+        // Swipe left → delete
+        snapped.current = -RC_ACTION_WIDTH;
+        snapTo(-RC_ACTION_WIDTH);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (gs.dx > RC_SWIPE_THRESHOLD && base <= 0) {
+        // Swipe right → edit
+        snapped.current = RC_ACTION_WIDTH;
+        snapTo(RC_ACTION_WIDTH);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (gs.dx > RC_SWIPE_THRESHOLD / 2 && base < 0) {
+        close();
+      } else if (gs.dx < -RC_SWIPE_THRESHOLD / 2 && base > 0) {
+        close();
+      } else {
+        snapTo(snapped.current);
+      }
+    },
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderTerminate: () => { snapTo(snapped.current); },
+  })).current;
+
+  const handleCardPress = () => {
+    if (snapped.current !== 0) { close(); return; }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
-    <Pressable
-      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
-      style={({ pressed }) => [rcStyles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 }]}
-    >
-      <LinearGradient
-        colors={[goalColor + "22", "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={rcStyles.cardGradient}
-      />
-      <View style={rcStyles.cardTop}>
-        <View style={rcStyles.pillRow}>
-          <View style={[rcStyles.mealPill, { backgroundColor: mealColor + "20", borderColor: mealColor + "40" }]}>
-            <Ionicons name={MEAL_ICONS[recipe.meal] as any} size={11} color={mealColor} />
-            <Text style={[rcStyles.mealText, { color: mealColor, fontFamily: "Outfit_700Bold" }]}>
-              {recipe.meal}
-            </Text>
+    <View style={rcStyles.swipeRow}>
+      {/* Right action — Edit (revealed by swiping right) */}
+      <Pressable
+        style={[rcStyles.actionLeft, { backgroundColor: "#00E676" }]}
+        onPress={() => { close(); setTimeout(() => onEditRef.current(), 150); }}
+      >
+        <Ionicons name="pencil" size={22} color="#000" />
+        <Text style={[rcStyles.actionLabel, { color: "#000", fontFamily: "Outfit_700Bold" }]}>Edit</Text>
+      </Pressable>
+      {/* Left action — Delete (revealed by swiping left) */}
+      <Pressable
+        style={[rcStyles.actionRight, { backgroundColor: "#FF3B30" }]}
+        onPress={() => { close(); setTimeout(() => onDeleteRef.current(), 150); }}
+      >
+        <Ionicons name="trash" size={22} color="#fff" />
+        <Text style={[rcStyles.actionLabel, { color: "#fff", fontFamily: "Outfit_700Bold" }]}>Delete</Text>
+      </Pressable>
+
+      <Animated.View style={{ transform: [{ translateX }] }} {...pan.panHandlers}>
+        <Pressable
+          onPress={handleCardPress}
+          style={[rcStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
+          <LinearGradient
+            colors={[goalColor + "22", "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={rcStyles.cardGradient}
+          />
+          <View style={rcStyles.cardTop}>
+            <View style={rcStyles.pillRow}>
+              <View style={[rcStyles.mealPill, { backgroundColor: mealColor + "20", borderColor: mealColor + "40" }]}>
+                <Ionicons name={MEAL_ICONS[recipe.meal] as any} size={11} color={mealColor} />
+                <Text style={[rcStyles.mealText, { color: mealColor, fontFamily: "Outfit_700Bold" }]}>{recipe.meal}</Text>
+              </View>
+              <View style={[rcStyles.dietDot, { backgroundColor: dietColor }]} />
+            </View>
+            <View style={[rcStyles.diffBadge, {
+              backgroundColor: recipe.difficulty === "Easy" ? "#00E67620" : recipe.difficulty === "Medium" ? "#FF6B3520" : "#FF3B3020"
+            }]}>
+              <Text style={[rcStyles.diffText, {
+                color: recipe.difficulty === "Easy" ? "#00E676" : recipe.difficulty === "Medium" ? "#FF6B35" : "#FF3B30",
+                fontFamily: "Outfit_600SemiBold"
+              }]}>{recipe.difficulty}</Text>
+            </View>
           </View>
-          <View style={[rcStyles.dietDot, { backgroundColor: dietColor }]} />
-        </View>
-        <View style={[rcStyles.diffBadge, {
-          backgroundColor: recipe.difficulty === "Easy" ? "#00E676" + "20" : recipe.difficulty === "Medium" ? "#FF6B35" + "20" : "#FF3B30" + "20"
-        }]}>
-          <Text style={[rcStyles.diffText, {
-            color: recipe.difficulty === "Easy" ? "#00E676" : recipe.difficulty === "Medium" ? "#FF6B35" : "#FF3B30",
-            fontFamily: "Outfit_600SemiBold"
-          }]}>{recipe.difficulty}</Text>
-        </View>
-      </View>
-      <Text style={[rcStyles.name, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-        {recipe.name}
-      </Text>
-      <View style={rcStyles.metaRow}>
-        <View style={rcStyles.meta}>
-          <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-          <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
-            {recipe.prepTime}
-          </Text>
-        </View>
-        <View style={rcStyles.meta}>
-          <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
-          <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
-            {recipe.servings} serving{recipe.servings > 1 ? "s" : ""}
-          </Text>
-        </View>
-        <View style={rcStyles.meta}>
-          <Ionicons name="flame-outline" size={13} color="#FF6B35" />
-          <Text style={[rcStyles.metaText, { color: "#FF6B35", fontFamily: "Outfit_700Bold" }]}>
-            {recipe.macros.calories} kcal
-          </Text>
-        </View>
-      </View>
-      <View style={rcStyles.bottomRow}>
-        <View style={[rcStyles.goalPill, { backgroundColor: goalColor + "18", borderColor: goalColor + "35" }]}>
-          <Ionicons name={GOAL_ICONS[recipe.goal] as any} size={11} color={goalColor} />
-          <Text style={[rcStyles.goalText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>
-            {recipe.goal}
-          </Text>
-        </View>
-        <View style={rcStyles.macroStrip}>
-          <Text style={[rcStyles.macroStripText, { color: "#FF6B35", fontFamily: "Outfit_600SemiBold" }]}>
-            P:{recipe.macros.protein}g
-          </Text>
-          <Text style={[rcStyles.macroStripText, { color: "#00B4D8", fontFamily: "Outfit_600SemiBold" }]}>
-            C:{recipe.macros.carbs}g
-          </Text>
-          <Text style={[rcStyles.macroStripText, { color: "#B388FF", fontFamily: "Outfit_600SemiBold" }]}>
-            F:{recipe.macros.fat}g
-          </Text>
-        </View>
-      </View>
-    </Pressable>
+          <Text style={[rcStyles.name, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>{recipe.name}</Text>
+          <View style={rcStyles.metaRow}>
+            <View style={rcStyles.meta}>
+              <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+              <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>{recipe.prepTime}</Text>
+            </View>
+            <View style={rcStyles.meta}>
+              <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
+              <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
+                {recipe.servings} serving{recipe.servings > 1 ? "s" : ""}
+              </Text>
+            </View>
+            <View style={rcStyles.meta}>
+              <Ionicons name="flame-outline" size={13} color="#FF6B35" />
+              <Text style={[rcStyles.metaText, { color: "#FF6B35", fontFamily: "Outfit_700Bold" }]}>{recipe.macros.calories} kcal</Text>
+            </View>
+          </View>
+          <View style={rcStyles.bottomRow}>
+            <View style={[rcStyles.goalPill, { backgroundColor: goalColor + "18", borderColor: goalColor + "35" }]}>
+              <Ionicons name={GOAL_ICONS[recipe.goal] as any} size={11} color={goalColor} />
+              <Text style={[rcStyles.goalText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>{recipe.goal}</Text>
+            </View>
+            <View style={rcStyles.macroStrip}>
+              <Text style={[rcStyles.macroStripText, { color: "#FF6B35", fontFamily: "Outfit_600SemiBold" }]}>P:{recipe.macros.protein}g</Text>
+              <Text style={[rcStyles.macroStripText, { color: "#00B4D8", fontFamily: "Outfit_600SemiBold" }]}>C:{recipe.macros.carbs}g</Text>
+              <Text style={[rcStyles.macroStripText, { color: "#B388FF", fontFamily: "Outfit_600SemiBold" }]}>F:{recipe.macros.fat}g</Text>
+            </View>
+          </View>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
 const rcStyles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, overflow: "hidden" },
+  card: { borderRadius: 20, padding: 16, borderWidth: 1, overflow: "hidden" },
   cardGradient: { ...StyleSheet.absoluteFillObject, borderRadius: 20 },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   pillRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -1083,6 +1338,16 @@ const rcStyles = StyleSheet.create({
   goalText: { fontSize: 11 },
   macroStrip: { flexDirection: "row", gap: 10 },
   macroStripText: { fontSize: 11 },
+  swipeRow: { position: "relative", marginBottom: 12, borderRadius: 20, overflow: "hidden" },
+  actionLeft: {
+    position: "absolute", left: 0, top: 0, bottom: 0, width: RC_ACTION_WIDTH,
+    alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 20,
+  },
+  actionRight: {
+    position: "absolute", right: 0, top: 0, bottom: 0, width: RC_ACTION_WIDTH,
+    alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 20,
+  },
+  actionLabel: { fontSize: 11 },
 });
 
 function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null; visible: boolean; onClose: () => void }) {
@@ -1485,6 +1750,73 @@ function FilterRow({
   );
 }
 
+// Generic swipeable wrapper: swipe right=edit, swipe left=delete
+function SwipeableCard({ children, onEdit, onDelete, borderRadius = 22 }: {
+  children: React.ReactNode;
+  onEdit: () => void;
+  onDelete: () => void;
+  borderRadius?: number;
+}) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const snapped = useRef(0);
+  const onEditRef = useRef(onEdit);
+  onEditRef.current = onEdit;
+  const onDeleteRef = useRef(onDelete);
+  onDeleteRef.current = onDelete;
+
+  const snapTo = (val: number) =>
+    Animated.spring(translateX, { toValue: val, useNativeDriver: false, damping: 22, stiffness: 240, mass: 0.7 }).start();
+  const close = () => { snapped.current = 0; snapTo(0); };
+  const isHoriz = (gs: any) => Math.abs(gs.dx) > 6 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.8;
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onStartShouldSetPanResponderCapture: () => false,
+    onMoveShouldSetPanResponderCapture: (_, gs) => isHoriz(gs),
+    onMoveShouldSetPanResponder: (_, gs) => isHoriz(gs),
+    onPanResponderGrant: () => { translateX.stopAnimation(); },
+    onPanResponderMove: (_, gs) => {
+      translateX.setValue(Math.max(-RC_ACTION_WIDTH, Math.min(RC_ACTION_WIDTH, snapped.current + gs.dx)));
+    },
+    onPanResponderRelease: (_, gs) => {
+      const base = snapped.current;
+      if (gs.dx < -RC_SWIPE_THRESHOLD && base >= 0) {
+        snapped.current = -RC_ACTION_WIDTH; snapTo(-RC_ACTION_WIDTH);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (gs.dx > RC_SWIPE_THRESHOLD && base <= 0) {
+        snapped.current = RC_ACTION_WIDTH; snapTo(RC_ACTION_WIDTH);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (gs.dx > RC_SWIPE_THRESHOLD / 2 && base < 0) { close();
+      } else if (gs.dx < -RC_SWIPE_THRESHOLD / 2 && base > 0) { close();
+      } else { snapTo(snapped.current); }
+    },
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderTerminate: () => { snapTo(snapped.current); },
+  })).current;
+
+  return (
+    <View style={{ position: "relative", overflow: "hidden", borderRadius }}>
+      <Pressable
+        style={[rcStyles.actionLeft, { backgroundColor: "#00E676", borderRadius }]}
+        onPress={() => { close(); setTimeout(() => onEditRef.current(), 150); }}
+      >
+        <Ionicons name="pencil" size={22} color="#000" />
+        <Text style={[rcStyles.actionLabel, { color: "#000", fontFamily: "Outfit_700Bold" }]}>Edit</Text>
+      </Pressable>
+      <Pressable
+        style={[rcStyles.actionRight, { backgroundColor: "#FF3B30", borderRadius }]}
+        onPress={() => { close(); setTimeout(() => onDeleteRef.current(), 150); }}
+      >
+        <Ionicons name="trash" size={22} color="#fff" />
+        <Text style={[rcStyles.actionLabel, { color: "#fff", fontFamily: "Outfit_700Bold" }]}>Delete</Text>
+      </Pressable>
+      <Animated.View style={{ transform: [{ translateX }] }} {...pan.panHandlers}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function RecipesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -1498,10 +1830,20 @@ export default function RecipesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [prefModalVisible, setPrefModalVisible] = useState(false);
   const [savedPref, setSavedPref] = useState<MealPreference | null>(null);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [editedRecipes, setEditedRecipes] = useState<Record<string, RecipeEdit>>({});
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(PREF_KEY).then(val => {
       if (val) { try { setSavedPref(JSON.parse(val)); } catch {} }
+    });
+    AsyncStorage.getItem(RECIPE_DELETES_KEY).then(val => {
+      if (val) { try { setDeletedIds(JSON.parse(val)); } catch {} }
+    });
+    AsyncStorage.getItem(RECIPE_EDITS_KEY).then(val => {
+      if (val) { try { setEditedRecipes(JSON.parse(val)); } catch {} }
     });
   }, []);
 
@@ -1547,7 +1889,52 @@ export default function RecipesScreen() {
     try { await Share.share({ message: lines.join("\n") }); } catch {}
   };
 
-  const filtered = RECIPE_BANK.filter((r) => {
+  const handleDeleteRecipe = (id: string) => {
+    Alert.alert(
+      "Remove Recipe",
+      "This recipe will be hidden from your list. You can restore it by clearing app data.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            const next = [...deletedIds, id];
+            setDeletedIds(next);
+            await AsyncStorage.setItem(RECIPE_DELETES_KEY, JSON.stringify(next));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditRecipe = (recipe: Recipe) => {
+    const merged = editedRecipes[recipe.id]
+      ? { ...recipe, ...editedRecipes[recipe.id], macros: { ...recipe.macros, ...editedRecipes[recipe.id].macros } }
+      : recipe;
+    setEditingRecipe(merged as Recipe);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveRecipeEdit = async (id: string, edit: RecipeEdit) => {
+    const next = { ...editedRecipes, [id]: edit };
+    setEditedRecipes(next);
+    await AsyncStorage.setItem(RECIPE_EDITS_KEY, JSON.stringify(next));
+    setEditModalVisible(false);
+    setEditingRecipe(null);
+  };
+
+  // Merge edits into recipes and remove deleted ones
+  const mergedRecipes: Recipe[] = RECIPE_BANK
+    .filter(r => !deletedIds.includes(r.id))
+    .map(r => {
+      const edit = editedRecipes[r.id];
+      if (!edit) return r;
+      return { ...r, ...edit, macros: { ...r.macros, ...edit.macros } } as Recipe;
+    });
+
+  const filtered = mergedRecipes.filter((r) => {
     const dietOk = selectedDiet === "All" || r.diet === selectedDiet;
     const mealOk = selectedMeal === "All" || r.meal === selectedMeal;
     const goalOk = selectedGoal === "All" || r.goal === selectedGoal;
@@ -1635,6 +2022,11 @@ export default function RecipesScreen() {
 
             {/* Saved preference card */}
             {savedPref ? (
+              <SwipeableCard
+                onEdit={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setPrefModalVisible(true); }}
+                onDelete={deletePref}
+                borderRadius={22}
+              >
               <View style={[sStyles.prefCard, { backgroundColor: colors.card, borderColor: colors.tint + "40" }]}>
                 <LinearGradient colors={[colors.tint + "18", "transparent"]} style={StyleSheet.absoluteFillObject} />
                 <View style={sStyles.prefCardHeader}>
@@ -1712,6 +2104,7 @@ export default function RecipesScreen() {
                   </Pressable>
                 </View>
               </View>
+              </SwipeableCard>
             ) : (
               /* No preference saved yet */
               <Pressable
@@ -1737,7 +2130,13 @@ export default function RecipesScreen() {
           </View>
         ) : (
           filtered.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} onPress={() => openRecipe(recipe)} />
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              onPress={() => openRecipe(recipe)}
+              onEdit={() => handleEditRecipe(recipe)}
+              onDelete={() => handleDeleteRecipe(recipe.id)}
+            />
           ))
         )}
       </ScrollView>
@@ -1748,6 +2147,12 @@ export default function RecipesScreen() {
         initial={savedPref}
         onClose={() => setPrefModalVisible(false)}
         onSave={savePref}
+      />
+      <EditRecipeModal
+        recipe={editingRecipe}
+        visible={editModalVisible}
+        onClose={() => { setEditModalVisible(false); setEditingRecipe(null); }}
+        onSave={handleSaveRecipeEdit}
       />
     </View>
   );
