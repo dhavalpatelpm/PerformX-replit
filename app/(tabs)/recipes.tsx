@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 type Goal = "Strength" | "Endurance" | "Recovery" | "Mental Focus";
 type DietType = "Pure Veg" | "Eggetarian" | "Non-Veg";
+type MealType = "Breakfast" | "Brunch" | "Lunch" | "Pre-Workout" | "Post-Workout" | "Dinner";
 type Macro = { protein: number; carbs: number; fat: number; calories: number };
 
 interface Recipe {
@@ -24,6 +25,7 @@ interface Recipe {
   name: string;
   goal: Goal;
   diet: DietType;
+  meal: MealType;
   prepTime: string;
   servings: number;
   difficulty: "Easy" | "Medium" | "Advanced";
@@ -35,6 +37,7 @@ interface Recipe {
 
 const GOALS: Goal[] = ["Strength", "Endurance", "Recovery", "Mental Focus"];
 const DIET_TYPES: DietType[] = ["Pure Veg", "Eggetarian", "Non-Veg"];
+const MEAL_TYPES: MealType[] = ["Breakfast", "Brunch", "Lunch", "Pre-Workout", "Post-Workout", "Dinner"];
 
 const GOAL_COLORS: Record<Goal, string> = {
   Strength: "#FF6B35",
@@ -42,89 +45,49 @@ const GOAL_COLORS: Record<Goal, string> = {
   Recovery: "#00E676",
   "Mental Focus": "#B388FF",
 };
-
 const GOAL_ICONS: Record<Goal, string> = {
   Strength: "barbell-outline",
   Endurance: "bicycle-outline",
   Recovery: "bed-outline",
   "Mental Focus": "bulb-outline",
 };
-
 const DIET_COLORS: Record<DietType, string> = {
   "Pure Veg": "#00C853",
   "Eggetarian": "#FFB300",
   "Non-Veg": "#FF3B30",
 };
-
 const DIET_ICONS: Record<DietType, string> = {
   "Pure Veg": "leaf-outline",
   "Eggetarian": "sunny-outline",
   "Non-Veg": "restaurant-outline",
 };
+const MEAL_COLORS: Record<MealType, string> = {
+  Breakfast: "#FF9500",
+  Brunch: "#FF6B35",
+  Lunch: "#00B4D8",
+  "Pre-Workout": "#00E676",
+  "Post-Workout": "#B388FF",
+  Dinner: "#5E8BFF",
+};
+const MEAL_ICONS: Record<MealType, string> = {
+  Breakfast: "sunny-outline",
+  Brunch: "cafe-outline",
+  Lunch: "restaurant-outline",
+  "Pre-Workout": "flash-outline",
+  "Post-Workout": "fitness-outline",
+  Dinner: "moon-outline",
+};
 
 const RECIPE_BANK: Recipe[] = [
-  // ── PURE VEG ──────────────────────────────────────────────
+  // ══════════════════════════════════════════════
+  //  BREAKFAST
+  // ══════════════════════════════════════════════
   {
-    id: "pv1",
-    name: "Paneer Tikka Power Bowl",
+    id: "b1",
+    name: "Savory Masala Oats with Nuts",
     goal: "Strength",
     diet: "Pure Veg",
-    prepTime: "20 min",
-    servings: 2,
-    difficulty: "Medium",
-    ingredients: [
-      "250g paneer, cubed",
-      "1 cup quinoa or brown rice (cooked)",
-      "1/2 cup green moong dal (boiled)",
-      "1 tbsp hung curd",
-      "1 tsp tandoori masala",
-      "1 tsp ginger-garlic paste",
-      "1 tbsp mustard oil",
-      "Salt, chilli powder, chaat masala",
-    ],
-    steps: [
-      "Marinate paneer cubes in hung curd, tandoori masala, ginger-garlic paste, chilli powder and salt for 15 min.",
-      "Heat a grill pan with mustard oil over high heat. Sear paneer 2–3 min per side until charred.",
-      "Layer cooked quinoa or rice in bowl, top with boiled moong dal.",
-      "Place grilled paneer on top. Sprinkle chaat masala.",
-      "Serve hot with mint chutney on the side.",
-    ],
-    macros: { protein: 38, carbs: 52, fat: 22, calories: 560 },
-    tags: ["High Protein", "Post-Workout", "Anabolic"],
-  },
-  {
-    id: "pv2",
-    name: "Rajma Chawal Performance Plate",
-    goal: "Endurance",
-    diet: "Pure Veg",
-    prepTime: "30 min",
-    servings: 2,
-    difficulty: "Easy",
-    ingredients: [
-      "1 cup red kidney beans (rajma), soaked & boiled",
-      "1.5 cups brown rice (cooked)",
-      "1 large onion, finely chopped",
-      "2 tomatoes, pureed",
-      "1 tsp cumin seeds",
-      "1 tsp coriander powder",
-      "1/2 tsp garam masala",
-      "1 tbsp ghee, salt to taste",
-    ],
-    steps: [
-      "Heat ghee in a heavy pan. Add cumin seeds and let splutter.",
-      "Add onions, cook until golden brown. Add ginger-garlic paste and sauté 2 min.",
-      "Add tomato puree, coriander powder and cook until oil separates.",
-      "Add boiled rajma, 1 cup water, salt and garam masala. Simmer 15 min.",
-      "Serve generously over brown rice for a complete carb-protein meal.",
-    ],
-    macros: { protein: 26, carbs: 88, fat: 8, calories: 540 },
-    tags: ["Carb-Load", "Plant Protein", "Pre-Race"],
-  },
-  {
-    id: "pv3",
-    name: "Masala Oats Pre-Workout Bowl",
-    goal: "Strength",
-    diet: "Pure Veg",
+    meal: "Breakfast",
     prepTime: "10 min",
     servings: 1,
     difficulty: "Easy",
@@ -132,53 +95,28 @@ const RECIPE_BANK: Recipe[] = [
       "1 cup rolled oats",
       "1 tsp ghee",
       "1/2 tsp mustard seeds",
+      "8–10 curry leaves",
       "1 green chilli, slit",
-      "Handful of mixed nuts (almonds, cashews)",
-      "1/4 cup peanuts",
-      "Fresh coriander, salt, lemon juice",
+      "1/4 cup roasted peanuts",
+      "2 tbsp mixed nuts (almonds, cashews)",
+      "Salt, lemon juice, fresh coriander",
     ],
     steps: [
-      "Heat ghee in a non-stick pan. Add mustard seeds and green chilli.",
-      "Add oats and roast on medium heat for 3–4 min until golden and fragrant.",
-      "Add 2 cups hot water, salt and cook until oats absorb liquid.",
-      "Top with mixed nuts and peanuts for extra protein and healthy fat.",
-      "Finish with lemon juice and fresh coriander. Eat 45 min before training.",
+      "Heat ghee in a non-stick pan over medium heat. Add mustard seeds and curry leaves — let splutter.",
+      "Add green chilli and oats. Roast on medium heat 3–4 min until oats turn golden.",
+      "Pour in 1.5 cups hot water with salt. Stir and cook until oats absorb water (2–3 min).",
+      "Fold in roasted peanuts and mixed nuts for crunch and healthy fat.",
+      "Finish with lemon juice and fresh coriander. Best eaten 30–45 min before morning training.",
     ],
     macros: { protein: 18, carbs: 60, fat: 16, calories: 460 },
-    tags: ["Pre-Workout", "Slow-Release", "Satiety"],
+    tags: ["Pre-Workout Energy", "Slow-Release", "Gut Friendly"],
   },
   {
-    id: "pv4",
-    name: "Haldi Banana Recovery Lassi",
-    goal: "Recovery",
-    diet: "Pure Veg",
-    prepTime: "5 min",
-    servings: 1,
-    difficulty: "Easy",
-    ingredients: [
-      "1 ripe banana",
-      "300ml full-fat curd (dahi)",
-      "1 tsp turmeric powder",
-      "1/2 tsp black pepper",
-      "1 tbsp honey or jaggery",
-      "Pinch of cardamom",
-      "5–6 soaked almonds, blended",
-    ],
-    steps: [
-      "Add all ingredients to a blender.",
-      "Blend on high for 60 seconds until completely smooth.",
-      "Pour into a tall glass. Sprinkle pinch of cardamom on top.",
-      "Drink within 30 min of completing your training session.",
-      "The curcumin in turmeric and protein in curd support muscle recovery.",
-    ],
-    macros: { protein: 16, carbs: 56, fat: 8, calories: 360 },
-    tags: ["Anti-Inflammatory", "Gut Health", "Fast Prep"],
-  },
-  {
-    id: "pv5",
+    id: "b2",
     name: "Sprouted Moong Chilla",
     goal: "Mental Focus",
     diet: "Pure Veg",
+    meal: "Breakfast",
     prepTime: "15 min",
     servings: 2,
     difficulty: "Easy",
@@ -189,53 +127,169 @@ const RECIPE_BANK: Recipe[] = [
       "Handful spinach, finely chopped",
       "1 green chilli",
       "1 tsp cumin, salt to taste",
-      "Ghee for cooking",
+      "Ghee or oil for cooking",
     ],
     steps: [
       "Grind sprouted moong with ginger, green chilli and a splash of water into a coarse batter.",
-      "Add besan, chopped spinach, cumin and salt. Mix well. Rest 5 min.",
-      "Heat a flat tawa, grease with ghee. Pour batter and spread thin.",
-      "Cook 2–3 min per side on medium heat until golden.",
-      "Serve with green chutney. The amino acids in sprouted dal support cognitive function.",
+      "Add besan, chopped spinach, cumin and salt. Mix well — rest 5 min.",
+      "Heat a flat tawa, grease with ghee. Pour batter and spread into thin rounds.",
+      "Cook 2–3 min per side on medium heat until golden and crisp at edges.",
+      "Serve with green chutney. Sprouted amino acids support cognitive sharpness throughout the day.",
     ],
     macros: { protein: 22, carbs: 38, fat: 9, calories: 330 },
-    tags: ["Brain Food", "Gut Health", "Amino Acids"],
+    tags: ["Brain Food", "Amino Acids", "Gut Health"],
   },
-
-  // ── EGGETARIAN ────────────────────────────────────────────
   {
-    id: "eg1",
+    id: "b3",
+    name: "Poha with Peanuts & Vegetables",
+    goal: "Recovery",
+    diet: "Pure Veg",
+    meal: "Breakfast",
+    prepTime: "10 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "2 cups thick poha (flattened rice)",
+      "1/4 cup roasted peanuts",
+      "1 medium potato, diced small",
+      "1 tsp mustard seeds, curry leaves",
+      "1/2 tsp turmeric",
+      "1 tbsp oil",
+      "Salt, sugar (pinch), lemon juice",
+    ],
+    steps: [
+      "Rinse poha in a sieve under cold water for 30 seconds. Drain — it should be soft but not mushy.",
+      "Heat oil in pan, add mustard seeds and curry leaves. Add potato and cook until golden.",
+      "Add turmeric and drained poha. Mix gently — do not break the flakes.",
+      "Cook covered on low heat 3–4 min. Add peanuts, salt and a pinch of sugar.",
+      "Finish with lemon juice. Light on the stomach, perfect for morning recovery days.",
+    ],
+    macros: { protein: 12, carbs: 56, fat: 10, calories: 360 },
+    tags: ["Light Meal", "Easily Digestible", "Recovery Day"],
+  },
+  {
+    id: "b4",
     name: "Egg Bhurji Multigrain Bowl",
     goal: "Strength",
     diet: "Eggetarian",
+    meal: "Breakfast",
     prepTime: "15 min",
     servings: 1,
     difficulty: "Easy",
     ingredients: [
       "4 whole eggs",
-      "1 medium onion, finely chopped",
+      "1 onion, finely chopped",
       "2 tomatoes, chopped",
-      "1 green chilli, chopped",
+      "1 green chilli",
       "1 tsp cumin seeds",
       "1/2 tsp turmeric, 1 tsp coriander powder",
-      "1 tbsp ghee or butter",
-      "2 multigrain rotis or 1 cup cooked millets",
+      "1 tbsp ghee",
+      "2 multigrain rotis or cooked millets",
     ],
     steps: [
-      "Heat ghee in a pan over medium heat. Add cumin seeds and let splutter.",
-      "Add onions and green chilli. Cook until soft and translucent (4–5 min).",
-      "Add tomatoes, turmeric and coriander powder. Cook until tomatoes break down.",
-      "Beat eggs and pour into the pan. Keep stirring on medium-low heat until soft curds form.",
-      "Serve hot with multigrain rotis or over cooked millets for a high-protein meal.",
+      "Heat ghee in a heavy pan. Add cumin seeds and let splutter.",
+      "Add onions and green chilli — cook until translucent (4–5 min).",
+      "Add tomatoes, turmeric and coriander powder. Cook until oil separates.",
+      "Beat eggs lightly and pour in. Stir continuously on low-medium heat to form soft curds.",
+      "Serve hot over millets or with warm multigrain rotis. High biological value protein for morning muscle priming.",
     ],
     macros: { protein: 30, carbs: 44, fat: 20, calories: 480 },
-    tags: ["High Protein", "Post-Workout", "Anabolic"],
+    tags: ["High Protein", "Anabolic", "Muscle Priming"],
   },
   {
-    id: "eg2",
+    id: "b5",
+    name: "Mini Veggie Egg Muffins",
+    goal: "Mental Focus",
+    diet: "Eggetarian",
+    meal: "Breakfast",
+    prepTime: "22 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "6 whole eggs",
+      "1/2 cup spinach, chopped",
+      "1/4 cup bell pepper, diced",
+      "1/4 cup onion, finely chopped",
+      "2 tbsp paneer or cottage cheese, crumbled",
+      "1/2 tsp Italian herbs or chat masala",
+      "Salt, pepper to taste",
+    ],
+    steps: [
+      "Preheat oven to 180°C. Grease a 6-cup muffin tin with oil or butter.",
+      "Beat eggs well in a bowl. Add all vegetables, paneer and spices. Mix evenly.",
+      "Pour the egg mixture into muffin cups — fill 3/4 full.",
+      "Bake 18–20 min until muffins are set and lightly golden on top.",
+      "Let cool 2 min before removing. Can be meal-prepped on Sunday for the entire week.",
+    ],
+    macros: { protein: 24, carbs: 12, fat: 16, calories: 290 },
+    tags: ["Meal Prep", "Portable", "Brain Food"],
+  },
+  {
+    id: "b6",
+    name: "Chicken Keema Omelette",
+    goal: "Strength",
+    diet: "Non-Veg",
+    meal: "Breakfast",
+    prepTime: "15 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "3 whole eggs",
+      "80g cooked chicken mince (keema)",
+      "1/4 onion, finely chopped",
+      "1/4 tsp garam masala",
+      "1 green chilli, chopped",
+      "1 tsp ghee or butter",
+      "Salt, fresh coriander",
+    ],
+    steps: [
+      "If using raw keema, cook first: sauté in a dry pan with onion, garam masala and salt for 8 min.",
+      "Beat eggs with salt and a splash of water.",
+      "Heat ghee in a flat pan on medium. Pour eggs in, spreading evenly.",
+      "When eggs are 80% set, place cooked keema, onion and green chilli on one half.",
+      "Fold omelette over the filling. Garnish with coriander. Highest protein-per-calorie breakfast on the list.",
+    ],
+    macros: { protein: 38, carbs: 8, fat: 18, calories: 350 },
+    tags: ["Highest Protein", "Lean", "Keto-Friendly"],
+  },
+
+  // ══════════════════════════════════════════════
+  //  BRUNCH
+  // ══════════════════════════════════════════════
+  {
+    id: "br1",
+    name: "Paneer Bhurji Multigrain Toast",
+    goal: "Strength",
+    diet: "Pure Veg",
+    meal: "Brunch",
+    prepTime: "15 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "150g paneer, crumbled",
+      "1/4 onion, chopped finely",
+      "1 small tomato, deseeded, diced",
+      "1/2 tsp cumin, 1/4 tsp turmeric",
+      "1 tsp ghee",
+      "2 slices multigrain bread",
+      "Green chutney and sliced cucumber to serve",
+    ],
+    steps: [
+      "Heat ghee in a pan. Add cumin and let splutter. Add onions and sauté 3 min.",
+      "Add tomatoes and cook until soft. Add turmeric and salt.",
+      "Add crumbled paneer and mix well on high heat for 2 min — don't overcook.",
+      "Toast multigrain bread until golden. Spread green chutney on bread.",
+      "Pile paneer bhurji generously on toast. Top with sliced cucumber for freshness.",
+    ],
+    macros: { protein: 28, carbs: 38, fat: 18, calories: 430 },
+    tags: ["High Protein", "Vegetarian Power", "Satiety"],
+  },
+  {
+    id: "br2",
     name: "Masala Omelette Sprout Wrap",
     goal: "Mental Focus",
     diet: "Eggetarian",
+    meal: "Brunch",
     prepTime: "15 min",
     servings: 1,
     difficulty: "Easy",
@@ -246,52 +300,195 @@ const RECIPE_BANK: Recipe[] = [
       "1/4 bell pepper, diced",
       "1/2 tsp garam masala, chilli flakes",
       "1 tsp olive oil or ghee",
-      "2 whole wheat rotis",
-      "Green chutney",
+      "2 whole wheat rotis, green chutney",
     ],
     steps: [
-      "Beat eggs with garam masala, chilli flakes and salt.",
-      "Heat oil in pan, lightly sauté bell pepper for 2 min. Add sprouts and spinach.",
-      "Pour beaten eggs over vegetables. Cook on medium heat until set, fold in half.",
-      "Warm rotis on a tawa for 30 seconds each.",
-      "Place omelette on roti, top with chutney and sprouts. Roll tightly and serve.",
+      "Beat eggs with garam masala, chilli flakes and a pinch of salt.",
+      "Heat oil in pan — sauté bell pepper 2 min, add sprouts and spinach until wilted.",
+      "Pour beaten eggs over vegetables. Cook on medium heat until set — fold in half.",
+      "Warm rotis on a dry tawa for 30 seconds each.",
+      "Place omelette on roti with green chutney, sprouts on the side. Roll and wrap tightly.",
     ],
     macros: { protein: 26, carbs: 40, fat: 15, calories: 400 },
     tags: ["Brain Food", "Iron Rich", "Balanced"],
   },
   {
-    id: "eg3",
+    id: "br3",
+    name: "Chicken Tikka Multigrain Sandwich",
+    goal: "Strength",
+    diet: "Non-Veg",
+    meal: "Brunch",
+    prepTime: "15 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "150g grilled chicken tikka (pre-cooked or leftover)",
+      "3 slices multigrain bread",
+      "2 tbsp hung curd or Greek yogurt",
+      "1 tsp mint chutney",
+      "Lettuce, tomato slices, onion rings",
+      "Chaat masala to sprinkle",
+    ],
+    steps: [
+      "Slice grilled chicken tikka into thin strips. If using raw chicken, season with tandoori masala and grill 10 min.",
+      "Mix hung curd with mint chutney — this is your spread.",
+      "Toast multigrain bread slices lightly.",
+      "Spread curd-chutney mix, layer lettuce, tomato, onion rings and chicken tikka.",
+      "Sprinkle chaat masala. Close sandwich, press lightly and slice diagonally. High protein mid-morning fuel.",
+    ],
+    macros: { protein: 35, carbs: 42, fat: 12, calories: 420 },
+    tags: ["High Protein", "Portable", "Mid-Day Fuel"],
+  },
+  {
+    id: "br4",
+    name: "Haldi Banana Recovery Lassi",
+    goal: "Recovery",
+    diet: "Pure Veg",
+    meal: "Brunch",
+    prepTime: "5 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "1 ripe banana",
+      "300ml full-fat curd (dahi)",
+      "1 tsp turmeric powder",
+      "1/2 tsp black pepper (activates curcumin)",
+      "1 tbsp honey or jaggery",
+      "Pinch of cardamom",
+      "5–6 soaked almonds",
+    ],
+    steps: [
+      "Soak almonds in water overnight or for 30 min in warm water. Peel skin.",
+      "Add banana, curd, turmeric, black pepper, honey, cardamom and almonds to blender.",
+      "Blend on high for 60 seconds until completely smooth and creamy.",
+      "Pour into a tall glass. Sprinkle a pinch of cardamom on top.",
+      "Best consumed within 30 min of finishing training. Curcumin + black pepper significantly reduces DOMS.",
+    ],
+    macros: { protein: 16, carbs: 56, fat: 8, calories: 360 },
+    tags: ["Anti-Inflammatory", "Curcumin", "DOMS Relief"],
+  },
+
+  // ══════════════════════════════════════════════
+  //  LUNCH
+  // ══════════════════════════════════════════════
+  {
+    id: "l1",
+    name: "Rajma Chawal Performance Plate",
+    goal: "Endurance",
+    diet: "Pure Veg",
+    meal: "Lunch",
+    prepTime: "30 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "1 cup red kidney beans (rajma), soaked overnight & boiled",
+      "1.5 cups brown rice (cooked)",
+      "1 large onion, finely chopped",
+      "2 tomatoes, pureed",
+      "1 tsp cumin seeds, 1/2 tsp garam masala",
+      "1 tsp coriander powder",
+      "1 tbsp ghee, salt to taste",
+    ],
+    steps: [
+      "Heat ghee in a heavy-bottomed pan. Add cumin seeds and let splutter.",
+      "Add onions and cook until deep golden — this takes a full 8 min on medium heat.",
+      "Add ginger-garlic paste, then tomato puree and all spices. Cook until oil separates.",
+      "Add boiled rajma, 1 cup water, salt. Simmer 15 min until thick and flavourful.",
+      "Serve over brown rice. The complete amino acid profile (rice + rajma) is a pillar of endurance athlete nutrition.",
+    ],
+    macros: { protein: 26, carbs: 88, fat: 8, calories: 540 },
+    tags: ["Carb-Load", "Plant Protein", "Pre-Race Prep"],
+  },
+  {
+    id: "l2",
+    name: "Curd Rice with Pomegranate & Walnuts",
+    goal: "Recovery",
+    diet: "Pure Veg",
+    meal: "Lunch",
+    prepTime: "10 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "1 cup cooked white rice (slightly warm)",
+      "200ml full-fat curd (dahi)",
+      "2 tbsp pomegranate arils",
+      "1 tbsp walnuts, roughly crushed",
+      "1 tsp oil, 1/2 tsp mustard seeds",
+      "5–6 curry leaves, 1 green chilli",
+      "Salt, fresh coriander",
+    ],
+    steps: [
+      "Mix warm rice and curd until combined — add salt. Let rice absorb curd.",
+      "Heat oil in small pan. Add mustard seeds, curry leaves and green chilli. Splutter 30 sec.",
+      "Pour hot tadka over curd rice and mix gently.",
+      "Top with pomegranate arils and crushed walnuts.",
+      "The probiotic curd repairs gut microbiome post hard training days. Eat cool.",
+    ],
+    macros: { protein: 14, carbs: 62, fat: 10, calories: 400 },
+    tags: ["Gut Recovery", "Probiotic", "Anti-Inflammatory"],
+  },
+  {
+    id: "l3",
+    name: "Palak Dal with Jowar Roti",
+    goal: "Mental Focus",
+    diet: "Pure Veg",
+    meal: "Lunch",
+    prepTime: "30 min",
+    servings: 2,
+    difficulty: "Medium",
+    ingredients: [
+      "1/2 cup yellow moong dal + 1/4 cup chana dal",
+      "2 cups spinach (palak), blanched and pureed",
+      "1 tsp ghee, cumin seeds",
+      "1/2 tsp turmeric, 1 tsp coriander powder",
+      "2 garlic cloves, minced",
+      "4 jowar (sorghum) rotis",
+      "Lemon juice, salt",
+    ],
+    steps: [
+      "Pressure cook both dals together with turmeric for 3 whistles. Mash lightly.",
+      "Blanch spinach in boiling water 1 min, drain, blend smooth.",
+      "Add spinach puree to cooked dal. Stir over low heat 5 min.",
+      "Prepare tadka: heat ghee, add cumin and garlic. Cook 1 min and pour over dal.",
+      "Season with lemon and salt. Serve with jowar rotis — iron-rich, gluten-free and brain-optimising.",
+    ],
+    macros: { protein: 20, carbs: 58, fat: 8, calories: 390 },
+    tags: ["Iron Rich", "Gluten Free", "Brain Food"],
+  },
+  {
+    id: "l4",
     name: "Egg & Moong Dal Khichdi",
     goal: "Recovery",
     diet: "Eggetarian",
+    meal: "Lunch",
     prepTime: "25 min",
     servings: 2,
     difficulty: "Easy",
     ingredients: [
       "1/2 cup yellow moong dal",
       "1/2 cup white rice",
-      "3 eggs",
+      "3 whole eggs",
       "1 tsp cumin seeds",
-      "1/4 tsp turmeric",
-      "1 tbsp ghee",
-      "Salt, pinch of asafoetida (hing)",
+      "1/4 tsp turmeric, pinch of asafoetida",
+      "1 tbsp ghee, salt",
       "Fresh coriander to garnish",
     ],
     steps: [
       "Pressure cook moong dal and rice together with 3 cups water, turmeric and salt for 3 whistles.",
-      "In a separate pan, soft-boil or poach eggs for 6 min. Set aside.",
-      "Prepare tadka: heat ghee, add cumin and hing. Let splutter.",
-      "Pour tadka over khichdi and mash lightly to desired consistency.",
-      "Halve the eggs and place on khichdi. Garnish with coriander. Eat warm for optimal gut recovery.",
+      "Soft-boil or poach eggs for 6 min in lightly simmering water. Peel or plate.",
+      "Prepare tadka: heat ghee, add cumin and asafoetida — let splutter 30 sec.",
+      "Pour tadka over khichdi and mash lightly to desired porridge consistency.",
+      "Halve the eggs and place on top. Garnish with coriander. The most easily digested recovery meal in Indian cuisine.",
     ],
     macros: { protein: 32, carbs: 70, fat: 12, calories: 520 },
-    tags: ["Gut Recovery", "Electrolytes", "Post-Workout"],
+    tags: ["Gut Recovery", "Electrolytes", "Easy Digestion"],
   },
   {
-    id: "eg4",
-    name: "Boiled Egg & Millet Salad",
+    id: "l5",
+    name: "Boiled Egg & Foxtail Millet Salad",
     goal: "Endurance",
     diet: "Eggetarian",
+    meal: "Lunch",
     prepTime: "18 min",
     servings: 1,
     difficulty: "Easy",
@@ -300,55 +497,254 @@ const RECIPE_BANK: Recipe[] = [
       "3/4 cup cooked foxtail millet (kangni)",
       "1 cucumber, diced",
       "1 tomato, diced",
-      "Handful mint + coriander leaves",
+      "Handful mint and coriander leaves",
       "1 tbsp lemon juice",
-      "1 tsp chaat masala, salt",
+      "1 tsp chaat masala, salt to taste",
     ],
     steps: [
-      "Cook foxtail millet in 1.5x water for 12 min until fluffy. Cool slightly.",
+      "Cook foxtail millet in 1.5x water for 12 min until fluffy. Spread to cool.",
       "Peel and halve the boiled eggs.",
       "In a large bowl, combine millet, cucumber, tomato and fresh herbs.",
       "Dress with lemon juice, chaat masala and salt. Toss well.",
-      "Top with halved eggs. Consume 2 hours before training for sustained energy.",
+      "Top with halved eggs. Consume 2 hours before an afternoon training session for sustained glycogen.",
     ],
     macros: { protein: 28, carbs: 58, fat: 14, calories: 470 },
-    tags: ["Carb-Load", "Pre-Race", "Gluten Free"],
+    tags: ["Carb-Load", "Gluten Free", "Pre-Race"],
   },
-
-  // ── NON-VEG ───────────────────────────────────────────────
   {
-    id: "nv1",
-    name: "Tandoori Chicken Power Plate",
-    goal: "Strength",
+    id: "l6",
+    name: "Grilled Chicken Sprout Salad",
+    goal: "Mental Focus",
     diet: "Non-Veg",
-    prepTime: "30 min",
+    meal: "Lunch",
+    prepTime: "20 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "200g chicken breast, grilled",
+      "1/2 cup mixed sprouts",
+      "Handful spinach + rocket leaves",
+      "1/4 cup walnuts, roughly broken",
+      "1 small avocado, sliced (optional)",
+      "1 tbsp olive oil, lemon juice",
+      "Salt, black pepper, chaat masala",
+    ],
+    steps: [
+      "Season chicken breast with salt, pepper, and a touch of tandoori masala. Grill 6–7 min per side.",
+      "Rest chicken 3 min before slicing thin against the grain.",
+      "Toss spinach, rocket and sprouts in a large bowl.",
+      "Add walnuts and avocado if using.",
+      "Dress with olive oil, lemon juice and chaat masala. Top with chicken. Omega-3 from walnuts + lean protein boosts dopamine and sustained focus.",
+    ],
+    macros: { protein: 42, carbs: 20, fat: 22, calories: 440 },
+    tags: ["Nootropic", "Keto-Friendly", "Omega-3"],
+  },
+  {
+    id: "l7",
+    name: "Rohu Fish Curry with Millets",
+    goal: "Recovery",
+    diet: "Non-Veg",
+    meal: "Lunch",
+    prepTime: "25 min",
     servings: 2,
     difficulty: "Medium",
     ingredients: [
-      "400g boneless chicken thighs",
-      "3 tbsp hung curd",
-      "1 tbsp ginger-garlic paste",
-      "1.5 tsp tandoori masala",
-      "1 tsp Kashmiri chilli powder",
-      "1 tbsp mustard oil",
-      "Juice of 1 lemon",
-      "3 multigrain rotis, sliced onion rings",
+      "350g rohu or catla fish fillets",
+      "1 cup barnyard millet (cooked)",
+      "1 tbsp mustard oil, 1 tsp panch phoron",
+      "2 tomatoes, 1 onion, chopped",
+      "1/2 tsp each turmeric, cumin, coriander",
+      "Fresh curry leaves, salt",
     ],
     steps: [
-      "Score chicken thighs with deep cuts. Mix curd, ginger-garlic paste, spices, oil and lemon juice.",
-      "Coat chicken thoroughly and marinate minimum 2 hours (overnight is ideal).",
-      "Grill on high heat or in oven at 220°C for 18–22 min, flipping halfway.",
-      "Rest 5 min before slicing. Serve on warm rotis with raw onion rings and mint chutney.",
-      "This meal delivers the highest protein-per-calorie ratio for muscle synthesis.",
+      "Rub fish with turmeric and salt. Shallow-fry in mustard oil 3 min per side. Set aside.",
+      "In same pan, add panch phoron and curry leaves — splutter 30 sec.",
+      "Add onion and cook until soft. Add tomatoes and spices — cook 5 min until oil separates.",
+      "Gently slide fish back in. Add 1/2 cup water, simmer 8 min on low heat.",
+      "Serve over warm cooked millets. Omega-3 from rohu fish accelerates joint and muscle inflammation recovery.",
     ],
-    macros: { protein: 56, carbs: 42, fat: 14, calories: 530 },
-    tags: ["High Protein", "Anabolic", "Post-Workout"],
+    macros: { protein: 44, carbs: 66, fat: 12, calories: 560 },
+    tags: ["Omega-3", "Anti-Inflammatory", "Joint Health"],
+  },
+
+  // ══════════════════════════════════════════════
+  //  PRE-WORKOUT
+  // ══════════════════════════════════════════════
+  {
+    id: "pw1",
+    name: "Peanut Butter Banana Power Smoothie",
+    goal: "Endurance",
+    diet: "Pure Veg",
+    meal: "Pre-Workout",
+    prepTime: "5 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "2 ripe bananas",
+      "2 tbsp natural peanut butter",
+      "250ml oat milk or full-fat milk",
+      "1 tsp cocoa powder",
+      "1 tsp honey or dates (2 pitted)",
+      "Pinch of sea salt, ice cubes",
+    ],
+    steps: [
+      "Add all ingredients to a blender.",
+      "Blend on high 45–60 seconds until smooth and creamy.",
+      "Taste and adjust sweetness with honey.",
+      "Pour over ice and drink 60–75 min before training.",
+      "The combination of fast carbs (banana) and sustained energy (peanut butter fat) keeps you fueled for the full session.",
+    ],
+    macros: { protein: 14, carbs: 52, fat: 16, calories: 410 },
+    tags: ["Pre-Race", "Natural Energy", "Endurance Fuel"],
   },
   {
-    id: "nv2",
+    id: "pw2",
+    name: "Dry Fruit & Jaggery Energy Balls",
+    goal: "Strength",
+    diet: "Pure Veg",
+    meal: "Pre-Workout",
+    prepTime: "10 min",
+    servings: 3,
+    difficulty: "Easy",
+    ingredients: [
+      "10 Medjool dates, pitted",
+      "1/4 cup almonds",
+      "1/4 cup cashews",
+      "2 tbsp peanut butter",
+      "1 tsp sesame seeds (til)",
+      "1 tbsp desiccated coconut",
+      "Pinch of cardamom",
+    ],
+    steps: [
+      "Blend dates in a food processor until they form a sticky paste.",
+      "Add almonds and cashews — pulse to a rough crumble (don't over-blend).",
+      "Add peanut butter, sesame and cardamom. Mix thoroughly.",
+      "Roll into 6 equal balls using slightly wet hands. Coat in desiccated coconut.",
+      "Refrigerate 20 min to firm up. Eat 2 balls 45 min before training. Store in fridge up to 5 days.",
+    ],
+    macros: { protein: 10, carbs: 48, fat: 18, calories: 390 },
+    tags: ["Natural Energy", "Meal Prep", "No Added Sugar"],
+  },
+  {
+    id: "pw3",
+    name: "Spiced Buttermilk with Chia Seeds",
+    goal: "Endurance",
+    diet: "Pure Veg",
+    meal: "Pre-Workout",
+    prepTime: "5 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "300ml cold buttermilk (chhaas)",
+      "1 tbsp chia seeds",
+      "1/2 tsp roasted cumin powder",
+      "1/4 tsp black salt (kala namak)",
+      "Pinch of ginger powder",
+      "Fresh mint leaves",
+    ],
+    steps: [
+      "Soak chia seeds in 4 tbsp water for 5 min — they will gel.",
+      "Mix buttermilk with cumin powder, black salt and ginger powder.",
+      "Add soaked chia seeds and stir.",
+      "Garnish with mint leaves.",
+      "Drink 45 min before training. Electrolytes from black salt + hydration from buttermilk prevent early cramping.",
+    ],
+    macros: { protein: 6, carbs: 14, fat: 4, calories: 120 },
+    tags: ["Electrolytes", "Hydration", "Pre-Run"],
+  },
+  {
+    id: "pw4",
+    name: "Banana & Oat Pre-Lift Bar",
+    goal: "Strength",
+    diet: "Eggetarian",
+    meal: "Pre-Workout",
+    prepTime: "15 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "1 cup rolled oats",
+      "2 ripe bananas, mashed",
+      "1 egg white",
+      "2 tbsp peanut butter",
+      "1 tsp honey",
+      "1/4 tsp cinnamon",
+      "Handful dark chocolate chips or raisins",
+    ],
+    steps: [
+      "Preheat oven to 180°C. Line a small baking tray with parchment.",
+      "Mix mashed banana, egg white, peanut butter and honey until smooth.",
+      "Fold in oats, cinnamon and chocolate chips.",
+      "Spread mixture on tray about 1.5cm thick. Bake 18–20 min until golden.",
+      "Cool and slice into bars. Eat 1 bar 45 min before your heaviest lifting session.",
+    ],
+    macros: { protein: 16, carbs: 58, fat: 12, calories: 410 },
+    tags: ["Natural Energy", "Pre-Lift", "Slow-Release"],
+  },
+
+  // ══════════════════════════════════════════════
+  //  POST-WORKOUT
+  // ══════════════════════════════════════════════
+  {
+    id: "po1",
+    name: "Paneer Tikka Power Bowl",
+    goal: "Strength",
+    diet: "Pure Veg",
+    meal: "Post-Workout",
+    prepTime: "20 min",
+    servings: 2,
+    difficulty: "Medium",
+    ingredients: [
+      "250g paneer, cubed",
+      "1 cup quinoa or brown rice (cooked)",
+      "1/2 cup green moong dal (boiled)",
+      "1 tbsp hung curd, 1 tsp tandoori masala",
+      "1 tsp ginger-garlic paste",
+      "1 tbsp mustard oil",
+      "Salt, chilli powder, chaat masala",
+    ],
+    steps: [
+      "Marinate paneer in hung curd, tandoori masala, ginger-garlic paste, chilli and salt for 15 min.",
+      "Heat a grill pan with mustard oil on high. Sear paneer 2–3 min per side until charred.",
+      "Layer cooked quinoa or rice in bowl, top with boiled moong dal.",
+      "Place grilled paneer on top and sprinkle chaat masala generously.",
+      "Consume within 45 min post-training. The leucine content in paneer maximally stimulates muscle protein synthesis.",
+    ],
+    macros: { protein: 38, carbs: 52, fat: 22, calories: 560 },
+    tags: ["High Protein", "Post-Workout", "Muscle Synthesis"],
+  },
+  {
+    id: "po2",
+    name: "Egg White & Oat Recovery Shake",
+    goal: "Strength",
+    diet: "Eggetarian",
+    meal: "Post-Workout",
+    prepTime: "5 min",
+    servings: 1,
+    difficulty: "Easy",
+    ingredients: [
+      "5 pasteurised egg whites",
+      "1/2 cup rolled oats",
+      "1 banana",
+      "250ml full-fat milk",
+      "1 tbsp honey",
+      "Pinch of cinnamon",
+    ],
+    steps: [
+      "Add all ingredients to a blender — use pasteurised egg whites (safe to consume raw).",
+      "Blend on high for 60 seconds until completely smooth.",
+      "If too thick, add 50ml cold water and blend again.",
+      "Consume within 30 min of finishing your session.",
+      "This shake delivers 30g of fast-absorbing protein and 42g of glycogen-restoring carbs at the critical anabolic window.",
+    ],
+    macros: { protein: 30, carbs: 42, fat: 6, calories: 345 },
+    tags: ["Anabolic Window", "Fast Absorbing", "Muscle Repair"],
+  },
+  {
+    id: "po3",
     name: "Chicken Keema Brown Rice Bowl",
     goal: "Endurance",
     diet: "Non-Veg",
+    meal: "Post-Workout",
     prepTime: "30 min",
     servings: 2,
     difficulty: "Medium",
@@ -357,53 +753,26 @@ const RECIPE_BANK: Recipe[] = [
       "1.5 cups brown rice (cooked)",
       "1 large onion, finely chopped",
       "2 tomatoes, pureed",
-      "1 tsp each: cumin, coriander, garam masala",
+      "1 tsp each cumin, coriander, garam masala",
       "1/2 tsp turmeric",
-      "1 tbsp olive oil",
-      "Salt and fresh coriander",
+      "1 tbsp olive oil, salt, fresh coriander",
     ],
     steps: [
       "Heat oil in a wok. Add onions and cook until deep golden (8 min).",
-      "Add ginger-garlic paste and sauté. Add tomato puree, all spices and cook until oil separates.",
-      "Add chicken mince, breaking lumps. Cook on high heat for 12–15 min until cooked through.",
-      "Adjust salt. If dry, add splash of water and simmer 3 min.",
-      "Serve generous portions over brown rice. Great carb-protein balance for endurance athletes.",
+      "Add ginger-garlic paste, then tomato puree and all spices. Cook until oil separates.",
+      "Add chicken mince, breaking lumps. Cook on high heat 12–15 min until completely done.",
+      "Adjust salt, add splash of water if dry, simmer 3 more min.",
+      "Serve over brown rice. The 50g protein + 80g complex carb ratio is optimal for endurance glycogen replenishment.",
     ],
     macros: { protein: 50, carbs: 80, fat: 16, calories: 660 },
-    tags: ["Carb-Load", "Lean Protein", "Pre-Race"],
+    tags: ["Glycogen Replenishment", "Lean Protein", "Post-Endurance"],
   },
   {
-    id: "nv3",
-    name: "Rohu Fish Curry & Millets",
-    goal: "Recovery",
-    diet: "Non-Veg",
-    prepTime: "25 min",
-    servings: 2,
-    difficulty: "Medium",
-    ingredients: [
-      "350g rohu or catla fish fillets",
-      "1 cup barnyard millet (cooked)",
-      "1 tbsp mustard oil",
-      "1 tsp panch phoron",
-      "2 tomatoes, 1 onion, chopped",
-      "1/2 tsp each: turmeric, cumin, coriander",
-      "Fresh curry leaves, salt",
-    ],
-    steps: [
-      "Rub fish with turmeric and salt. Shallow fry in mustard oil 3 min per side. Set aside.",
-      "In same pan, add panch phoron and curry leaves. Let splutter.",
-      "Add onion and cook until soft. Add tomatoes and all spices, cook 5 min.",
-      "Gently slide fish back in. Add 1/2 cup water, simmer 8 min on low heat.",
-      "Serve over warm cooked millets. Omega-3 from fish accelerates muscle inflammation recovery.",
-    ],
-    macros: { protein: 44, carbs: 66, fat: 12, calories: 560 },
-    tags: ["Omega-3", "Anti-Inflammatory", "Gut Health"],
-  },
-  {
-    id: "nv4",
+    id: "po4",
     name: "Mutton Bone Broth Collagen Soup",
     goal: "Recovery",
     diet: "Non-Veg",
+    meal: "Post-Workout",
     prepTime: "60 min",
     servings: 3,
     difficulty: "Advanced",
@@ -417,41 +786,158 @@ const RECIPE_BANK: Recipe[] = [
       "Salt and fresh coriander",
     ],
     steps: [
-      "Blanch bones in boiling water for 5 min. Discard water and rinse bones.",
+      "Blanch bones in boiling water 5 min. Discard water and rinse bones thoroughly.",
       "Add bones to pressure cooker with all spices, garlic and ginger. Cover with 1.5 litres water.",
-      "Add apple cider vinegar (helps extract collagen). Pressure cook 45 min on low.",
-      "Strain broth. Discard solids. Season with salt.",
-      "Drink a cup post-workout. Collagen, glycine and gelatin from marrow repair joints and connective tissue.",
+      "Add apple cider vinegar — helps extract collagen from bones.",
+      "Pressure cook 45 min on low. Strain broth and discard solids.",
+      "Season with salt. Drink 1 cup immediately post-workout. Collagen, glycine and gelatin directly repair tendons and joint cartilage.",
     ],
     macros: { protein: 26, carbs: 4, fat: 8, calories: 190 },
-    tags: ["Collagen", "Joint Recovery", "Anti-Inflammatory"],
+    tags: ["Collagen", "Joint Repair", "Anti-Inflammatory"],
   },
+
+  // ══════════════════════════════════════════════
+  //  DINNER
+  // ══════════════════════════════════════════════
   {
-    id: "nv5",
-    name: "Grilled Chicken Sprout Salad",
-    goal: "Mental Focus",
-    diet: "Non-Veg",
-    prepTime: "20 min",
-    servings: 1,
-    difficulty: "Easy",
+    id: "d1",
+    name: "Palak Paneer with Bajra Roti",
+    goal: "Strength",
+    diet: "Pure Veg",
+    meal: "Dinner",
+    prepTime: "30 min",
+    servings: 2,
+    difficulty: "Medium",
     ingredients: [
-      "200g chicken breast, grilled",
-      "1/2 cup mixed sprouts",
-      "Handful spinach + rocket leaves",
-      "1/4 cup walnuts, roughly broken",
-      "1/4 avocado, sliced (optional)",
-      "1 tbsp olive oil",
-      "Lemon juice, salt, black pepper, chaat masala",
+      "250g paneer, cubed",
+      "300g spinach (palak), blanched",
+      "1 onion, 2 tomatoes, 2 garlic cloves",
+      "1 tsp each cumin, coriander powder",
+      "1/2 tsp garam masala",
+      "1 tbsp ghee",
+      "4 bajra (pearl millet) rotis",
     ],
     steps: [
-      "Season chicken breast with salt, pepper and grill 6–7 min per side. Slice thin.",
-      "Toss spinach, rocket and sprouts in a large bowl.",
-      "Add walnuts and avocado if using.",
-      "Dress with olive oil, lemon juice, chaat masala. Toss lightly.",
-      "Top with sliced chicken. The omega-3 from walnuts + lean protein boosts dopamine and focus.",
+      "Blanch spinach in boiling water 1 min. Drain and blend to smooth puree.",
+      "Heat ghee — sauté onions, garlic until golden. Add tomatoes and all spices.",
+      "Cook masala until oil separates. Add spinach puree and simmer 8 min.",
+      "Add paneer cubes and cook gently 5 min — paneer will absorb the flavour.",
+      "Serve with warm bajra rotis. Perfect dinner: slow-release carbs + casein-rich paneer protein for overnight muscle repair.",
     ],
-    macros: { protein: 42, carbs: 20, fat: 22, calories: 440 },
-    tags: ["Brain Food", "Keto-Friendly", "Nootropic"],
+    macros: { protein: 32, carbs: 58, fat: 18, calories: 530 },
+    tags: ["Overnight Recovery", "High Protein", "Iron Rich"],
+  },
+  {
+    id: "d2",
+    name: "Dal Tadka with Brown Rice",
+    goal: "Recovery",
+    diet: "Pure Veg",
+    meal: "Dinner",
+    prepTime: "30 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "1 cup toor dal (pigeon pea)",
+      "1.5 cups brown rice (cooked)",
+      "2 tomatoes, 1 onion, chopped",
+      "1 tbsp ghee",
+      "1 tsp cumin seeds, 2 dried red chillies",
+      "1/2 tsp turmeric, 1 tsp coriander powder",
+      "Lemon juice, fresh coriander",
+    ],
+    steps: [
+      "Pressure cook toor dal with tomatoes and turmeric for 4 whistles. Mash lightly.",
+      "Prepare tadka: heat ghee until almost smoking. Add cumin, red chillies and onions.",
+      "Cook onions until golden. Add coriander powder, stir 30 sec and pour over dal.",
+      "Squeeze lemon juice and stir. Add water if too thick — dal should be pourable.",
+      "Serve with brown rice. A perfect wind-down dinner: gut-friendly, complete protein and easy on digestion before sleep.",
+    ],
+    macros: { protein: 18, carbs: 72, fat: 8, calories: 440 },
+    tags: ["Gut Friendly", "Winding Down", "Complete Protein"],
+  },
+  {
+    id: "d3",
+    name: "Egg Fried Brown Rice",
+    goal: "Endurance",
+    diet: "Eggetarian",
+    meal: "Dinner",
+    prepTime: "20 min",
+    servings: 2,
+    difficulty: "Easy",
+    ingredients: [
+      "2 cups cooked brown rice (day-old works best)",
+      "3 whole eggs",
+      "1/2 cup mixed vegetables (peas, carrot, corn)",
+      "3 garlic cloves, minced",
+      "2 tbsp low-sodium soy sauce",
+      "1 tsp sesame oil",
+      "1 tbsp olive oil, spring onions",
+    ],
+    steps: [
+      "Heat olive oil in a large wok on high heat. Add garlic — cook 30 sec.",
+      "Add mixed vegetables and stir-fry 3 min on high heat.",
+      "Push vegetables to the side, add eggs and scramble quickly in the centre.",
+      "Add rice and break up any clumps. Toss everything together on high heat.",
+      "Add soy sauce and sesame oil. Toss 2 min more. Garnish with spring onions. High-carb dinner for morning event athletes.",
+    ],
+    macros: { protein: 26, carbs: 76, fat: 14, calories: 540 },
+    tags: ["Carb-Load", "Glycogen Store", "Pre-Event Night"],
+  },
+  {
+    id: "d4",
+    name: "Tandoori Chicken Power Plate",
+    goal: "Strength",
+    diet: "Non-Veg",
+    meal: "Dinner",
+    prepTime: "30 min",
+    servings: 2,
+    difficulty: "Medium",
+    ingredients: [
+      "400g boneless chicken thighs",
+      "3 tbsp hung curd, 1 tbsp ginger-garlic paste",
+      "1.5 tsp tandoori masala",
+      "1 tsp Kashmiri chilli powder",
+      "1 tbsp mustard oil",
+      "Juice of 1 lemon",
+      "3 multigrain rotis, sliced onion rings",
+    ],
+    steps: [
+      "Score chicken thighs with deep cuts. Mix all marinade ingredients and coat thoroughly.",
+      "Marinate minimum 2 hours (overnight ideal). The hung curd tenderises the protein fibers.",
+      "Grill on high heat or oven at 220°C for 18–22 min, flipping halfway through.",
+      "Rest 5 min before slicing. Serve on warm rotis with raw onion and mint chutney.",
+      "The highest protein-per-calorie dinner on the list. The slow-digesting chicken protein feeds muscles overnight.",
+    ],
+    macros: { protein: 56, carbs: 42, fat: 14, calories: 530 },
+    tags: ["Highest Protein", "Overnight Muscle Repair", "Anabolic"],
+  },
+  {
+    id: "d5",
+    name: "Grilled Pomfret with Steamed Rice",
+    goal: "Recovery",
+    diet: "Non-Veg",
+    meal: "Dinner",
+    prepTime: "25 min",
+    servings: 2,
+    difficulty: "Medium",
+    ingredients: [
+      "2 medium pomfret fish (cleaned, scored)",
+      "1 tsp each turmeric, coriander powder, chilli powder",
+      "1 tbsp ginger-garlic paste",
+      "1 tbsp coconut oil",
+      "Juice of 1 lime",
+      "1.5 cups white rice (steamed)",
+      "Sliced onion, tomato kachumber to serve",
+    ],
+    steps: [
+      "Score pomfret deeply on both sides. Mix spices, ginger-garlic paste and lime juice into a paste.",
+      "Rub marinade all over fish, including inside the cuts. Marinate 20 min minimum.",
+      "Heat grill pan or tawa with coconut oil on high heat.",
+      "Grill fish 5–6 min per side until skin is charred and flesh flakes easily.",
+      "Serve over steamed rice with kachumber salad. Pomfret is exceptionally rich in DHA — the key omega-3 for joint recovery.",
+    ],
+    macros: { protein: 40, carbs: 60, fat: 14, calories: 530 },
+    tags: ["DHA Rich", "Joint Recovery", "Omega-3"],
   },
 ];
 
@@ -484,6 +970,7 @@ function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }
   const { colors } = useTheme();
   const goalColor = GOAL_COLORS[recipe.goal];
   const dietColor = DIET_COLORS[recipe.diet];
+  const mealColor = MEAL_COLORS[recipe.meal];
 
   return (
     <Pressable
@@ -491,20 +978,20 @@ function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }
       style={({ pressed }) => [rcStyles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 }]}
     >
       <LinearGradient
-        colors={[goalColor + "28", "transparent"]}
+        colors={[goalColor + "22", "transparent"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={rcStyles.cardGradient}
       />
       <View style={rcStyles.cardTop}>
         <View style={rcStyles.pillRow}>
-          <View style={[rcStyles.dietDot, { backgroundColor: dietColor }]} />
-          <View style={[rcStyles.goalPill, { backgroundColor: goalColor + "20", borderColor: goalColor + "40" }]}>
-            <Ionicons name={GOAL_ICONS[recipe.goal] as any} size={12} color={goalColor} />
-            <Text style={[rcStyles.goalText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>
-              {recipe.goal}
+          <View style={[rcStyles.mealPill, { backgroundColor: mealColor + "20", borderColor: mealColor + "40" }]}>
+            <Ionicons name={MEAL_ICONS[recipe.meal] as any} size={11} color={mealColor} />
+            <Text style={[rcStyles.mealText, { color: mealColor, fontFamily: "Outfit_700Bold" }]}>
+              {recipe.meal}
             </Text>
           </View>
+          <View style={[rcStyles.dietDot, { backgroundColor: dietColor }]} />
         </View>
         <View style={[rcStyles.diffBadge, {
           backgroundColor: recipe.difficulty === "Easy" ? "#00E676" + "20" : recipe.difficulty === "Medium" ? "#FF6B35" + "20" : "#FF3B30" + "20"
@@ -520,54 +1007,66 @@ function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }
       </Text>
       <View style={rcStyles.metaRow}>
         <View style={rcStyles.meta}>
-          <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+          <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
           <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
             {recipe.prepTime}
           </Text>
         </View>
         <View style={rcStyles.meta}>
-          <Ionicons name="people-outline" size={14} color={colors.textSecondary} />
+          <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
           <Text style={[rcStyles.metaText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
-            {recipe.servings} servings
+            {recipe.servings} serving{recipe.servings > 1 ? "s" : ""}
           </Text>
         </View>
         <View style={rcStyles.meta}>
-          <Ionicons name="flame-outline" size={14} color="#FF6B35" />
+          <Ionicons name="flame-outline" size={13} color="#FF6B35" />
           <Text style={[rcStyles.metaText, { color: "#FF6B35", fontFamily: "Outfit_700Bold" }]}>
             {recipe.macros.calories} kcal
           </Text>
         </View>
       </View>
-      <View style={rcStyles.tagsRow}>
-        {recipe.tags.map((tag) => (
-          <View key={tag} style={[rcStyles.tag, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
-            <Text style={[rcStyles.tagText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
-              {tag}
-            </Text>
-          </View>
-        ))}
+      <View style={rcStyles.bottomRow}>
+        <View style={[rcStyles.goalPill, { backgroundColor: goalColor + "18", borderColor: goalColor + "35" }]}>
+          <Ionicons name={GOAL_ICONS[recipe.goal] as any} size={11} color={goalColor} />
+          <Text style={[rcStyles.goalText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>
+            {recipe.goal}
+          </Text>
+        </View>
+        <View style={rcStyles.macroStrip}>
+          <Text style={[rcStyles.macroStripText, { color: "#FF6B35", fontFamily: "Outfit_600SemiBold" }]}>
+            P:{recipe.macros.protein}g
+          </Text>
+          <Text style={[rcStyles.macroStripText, { color: "#00B4D8", fontFamily: "Outfit_600SemiBold" }]}>
+            C:{recipe.macros.carbs}g
+          </Text>
+          <Text style={[rcStyles.macroStripText, { color: "#B388FF", fontFamily: "Outfit_600SemiBold" }]}>
+            F:{recipe.macros.fat}g
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
 }
 
 const rcStyles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 18, marginBottom: 14, borderWidth: 1, overflow: "hidden" },
+  card: { borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, overflow: "hidden" },
   cardGradient: { ...StyleSheet.absoluteFillObject, borderRadius: 20 },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   pillRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dietDot: { width: 10, height: 10, borderRadius: 5 },
-  goalPill: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
-  goalText: { fontSize: 12 },
-  diffBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  mealPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 9, borderWidth: 1 },
+  mealText: { fontSize: 11 },
+  dietDot: { width: 9, height: 9, borderRadius: 5 },
+  diffBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 },
   diffText: { fontSize: 11 },
-  name: { fontSize: 20, lineHeight: 26, marginBottom: 10 },
-  metaRow: { flexDirection: "row", gap: 16, marginBottom: 10 },
+  name: { fontSize: 18, lineHeight: 24, marginBottom: 8 },
+  metaRow: { flexDirection: "row", gap: 14, marginBottom: 10 },
   meta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 13 },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  tagText: { fontSize: 11 },
+  metaText: { fontSize: 12 },
+  bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  goalPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 9, borderWidth: 1 },
+  goalText: { fontSize: 11 },
+  macroStrip: { flexDirection: "row", gap: 10 },
+  macroStripText: { fontSize: 11 },
 });
 
 function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null; visible: boolean; onClose: () => void }) {
@@ -576,38 +1075,40 @@ function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null
   if (!recipe) return null;
   const goalColor = GOAL_COLORS[recipe.goal];
   const dietColor = DIET_COLORS[recipe.diet];
+  const mealColor = MEAL_COLORS[recipe.meal];
   const maxMacro = Math.max(recipe.macros.protein, recipe.macros.carbs, recipe.macros.fat);
 
   const handleShare = async () => {
-    const msg = `${recipe.name} (${recipe.diet})\n\nGoal: ${recipe.goal} | ${recipe.prepTime}\n\nIngredients:\n${recipe.ingredients.map(i => `• ${i}`).join("\n")}\n\nMacros: ${recipe.macros.protein}g protein, ${recipe.macros.carbs}g carbs, ${recipe.macros.fat}g fat, ${recipe.macros.calories} kcal\n\nGenerated with BioHack!`;
+    const msg = `${recipe.name}\n${recipe.meal} | ${recipe.diet}\nGoal: ${recipe.goal} | ${recipe.prepTime}\n\nIngredients:\n${recipe.ingredients.map(i => `• ${i}`).join("\n")}\n\nMacros: ${recipe.macros.protein}g protein, ${recipe.macros.carbs}g carbs, ${recipe.macros.fat}g fat, ${recipe.macros.calories} kcal\n\nBioHack — Track. Fuel. Perform.`;
     try { await Share.share({ message: msg }); } catch {}
   };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[rdStyles.container, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={[goalColor + "40", colors.background]}
-          style={rdStyles.headerGradient}
-        />
+        <LinearGradient colors={[goalColor + "40", colors.background]} style={rdStyles.headerGradient} />
         <View style={[rdStyles.header, { paddingTop: insets.top || 16 }]}>
           <Pressable onPress={onClose} style={[rdStyles.closeBtn, { backgroundColor: colors.card }]} hitSlop={12}>
             <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
           <Pressable onPress={handleShare} style={[rdStyles.shareBtn, { backgroundColor: goalColor }]} hitSlop={8}>
-            <Ionicons name="share-social-outline" size={20} color="#fff" />
+            <Ionicons name="share-social-outline" size={18} color="#fff" />
             <Text style={[rdStyles.shareBtnText, { fontFamily: "Outfit_600SemiBold" }]}>Share</Text>
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={[rdStyles.scroll, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
-          <View style={rdStyles.pillRow}>
-            <View style={[rdStyles.dietBadge, { backgroundColor: dietColor + "20", borderColor: dietColor + "50" }]}>
-              <Ionicons name={DIET_ICONS[recipe.diet] as any} size={13} color={dietColor} />
-              <Text style={[rdStyles.dietText, { color: dietColor, fontFamily: "Outfit_700Bold" }]}>{recipe.diet}</Text>
+          <View style={rdStyles.badgeRow}>
+            <View style={[rdStyles.badge, { backgroundColor: mealColor + "20", borderColor: mealColor + "50" }]}>
+              <Ionicons name={MEAL_ICONS[recipe.meal] as any} size={13} color={mealColor} />
+              <Text style={[rdStyles.badgeText, { color: mealColor, fontFamily: "Outfit_700Bold" }]}>{recipe.meal}</Text>
             </View>
-            <View style={[rdStyles.goalPill, { backgroundColor: goalColor + "20", borderColor: goalColor + "40" }]}>
+            <View style={[rdStyles.badge, { backgroundColor: dietColor + "20", borderColor: dietColor + "50" }]}>
+              <Ionicons name={DIET_ICONS[recipe.diet] as any} size={13} color={dietColor} />
+              <Text style={[rdStyles.badgeText, { color: dietColor, fontFamily: "Outfit_700Bold" }]}>{recipe.diet}</Text>
+            </View>
+            <View style={[rdStyles.badge, { backgroundColor: goalColor + "20", borderColor: goalColor + "40" }]}>
               <Ionicons name={GOAL_ICONS[recipe.goal] as any} size={13} color={goalColor} />
-              <Text style={[rdStyles.goalText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>{recipe.goal}</Text>
+              <Text style={[rdStyles.badgeText, { color: goalColor, fontFamily: "Outfit_600SemiBold" }]}>{recipe.goal}</Text>
             </View>
           </View>
           <Text style={[rdStyles.title, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
@@ -616,20 +1117,18 @@ function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null
           <View style={rdStyles.metaRow}>
             {[
               { icon: "time-outline", text: recipe.prepTime, color: colors.textSecondary },
-              { icon: "people-outline", text: `${recipe.servings} servings`, color: colors.textSecondary },
+              { icon: "people-outline", text: `${recipe.servings} serving${recipe.servings > 1 ? "s" : ""}`, color: colors.textSecondary },
               { icon: "flame-outline", text: `${recipe.macros.calories} kcal`, color: "#FF6B35" },
             ].map((m, i) => (
               <View key={i} style={rdStyles.metaItem}>
-                <Ionicons name={m.icon as any} size={16} color={m.color} />
+                <Ionicons name={m.icon as any} size={15} color={m.color} />
                 <Text style={[rdStyles.metaText, { color: m.color, fontFamily: "Outfit_500Medium" }]}>{m.text}</Text>
               </View>
             ))}
           </View>
 
           <View style={[rdStyles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-              Macros
-            </Text>
+            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Macros</Text>
             <View style={rdStyles.macroGrid}>
               {[
                 { label: "PROTEIN", value: recipe.macros.protein, unit: "g", color: "#FF6B35" },
@@ -649,9 +1148,7 @@ function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null
           </View>
 
           <View style={[rdStyles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-              Ingredients
-            </Text>
+            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Ingredients</Text>
             {recipe.ingredients.map((ing, i) => (
               <View key={i} style={rdStyles.ingRow}>
                 <View style={[rdStyles.ingDot, { backgroundColor: goalColor }]} />
@@ -661,9 +1158,7 @@ function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null
           </View>
 
           <View style={[rdStyles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-              Preparation
-            </Text>
+            <Text style={[rdStyles.sectionTitle, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Preparation</Text>
             {recipe.steps.map((step, i) => (
               <View key={i} style={rdStyles.stepRow}>
                 <View style={[rdStyles.stepNum, { backgroundColor: goalColor }]}>
@@ -695,11 +1190,9 @@ const rdStyles = StyleSheet.create({
   shareBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   shareBtnText: { color: "#fff", fontSize: 14 },
   scroll: { paddingHorizontal: 20 },
-  pillRow: { flexDirection: "row", gap: 8, marginBottom: 10, flexWrap: "wrap" },
-  dietBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
-  dietText: { fontSize: 12 },
-  goalPill: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
-  goalText: { fontSize: 13 },
+  badgeRow: { flexDirection: "row", gap: 8, marginBottom: 12, flexWrap: "wrap" },
+  badge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
+  badgeText: { fontSize: 12 },
   title: { fontSize: 26, lineHeight: 32, marginBottom: 14 },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginBottom: 20 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -723,26 +1216,82 @@ const rdStyles = StyleSheet.create({
   tagText: { fontSize: 13 },
 });
 
+function FilterRow({
+  label,
+  options,
+  selected,
+  colors: optColors,
+  icons: optIcons,
+  value,
+  onChange,
+  colors: themeColors,
+}: {
+  label: string;
+  options: string[];
+  selected: string;
+  colors: Record<string, string>;
+  icons: Record<string, string>;
+  value: string;
+  onChange: (v: any) => void;
+  colors: any;
+}) {
+  return (
+    <>
+      <Text style={[sStyles.filterLabel, { color: themeColors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+        {label}
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sStyles.filterRow}>
+        {(["All", ...options] as string[]).map((opt) => {
+          const active = value === opt;
+          const color = opt === "All" ? themeColors.tint : optColors[opt];
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => { onChange(opt); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              style={[
+                sStyles.filterChip,
+                { backgroundColor: active ? color : themeColors.card, borderColor: active ? color : themeColors.border },
+              ]}
+            >
+              {opt !== "All" && (
+                <Ionicons name={optIcons[opt] as any} size={13} color={active ? "#fff" : color} style={{ marginRight: 4 }} />
+              )}
+              <Text style={[sStyles.filterChipText, { color: active ? "#fff" : themeColors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+                {opt}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </>
+  );
+}
+
 export default function RecipesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
+
   const [selectedDiet, setSelectedDiet] = useState<DietType | "All">("All");
+  const [selectedMeal, setSelectedMeal] = useState<MealType | "All">("All");
   const [selectedGoal, setSelectedGoal] = useState<Goal | "All">("All");
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   const filtered = RECIPE_BANK.filter((r) => {
-    const dietMatch = selectedDiet === "All" || r.diet === selectedDiet;
-    const goalMatch = selectedGoal === "All" || r.goal === selectedGoal;
-    return dietMatch && goalMatch;
+    const dietOk = selectedDiet === "All" || r.diet === selectedDiet;
+    const mealOk = selectedMeal === "All" || r.meal === selectedMeal;
+    const goalOk = selectedGoal === "All" || r.goal === selectedGoal;
+    return dietOk && mealOk && goalOk;
   });
 
   const openRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setModalVisible(true);
   };
+
+  const activeFilters = [selectedDiet, selectedMeal, selectedGoal].filter(f => f !== "All").length;
 
   return (
     <View style={[sStyles.container, { backgroundColor: colors.background }]}>
@@ -752,107 +1301,65 @@ export default function RecipesScreen() {
       >
         <View style={sStyles.header}>
           <View>
-            <Text style={[sStyles.title, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>
-              Fuel Up
-            </Text>
+            <Text style={[sStyles.title, { color: colors.text, fontFamily: "Outfit_800ExtraBold" }]}>Fuel Up</Text>
             <Text style={[sStyles.subtitle, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>
               Indian athlete nutrition, your way
             </Text>
           </View>
+          <View style={[sStyles.countBadge, { backgroundColor: colors.tint + "20", borderColor: colors.tint + "40" }]}>
+            <Text style={[sStyles.countText, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>{filtered.length}</Text>
+            <Text style={[sStyles.countLabel, { color: colors.tint, fontFamily: "Outfit_500Medium" }]}>recipes</Text>
+          </View>
         </View>
 
-        {/* Diet Preference Filter */}
-        <Text style={[sStyles.filterLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
-          Dietary Preference
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={sStyles.filterRow}
-        >
-          {(["All", ...DIET_TYPES] as (DietType | "All")[]).map((diet) => {
-            const active = selectedDiet === diet;
-            const color = diet === "All" ? colors.tint : DIET_COLORS[diet];
-            return (
-              <Pressable
-                key={diet}
-                onPress={() => { setSelectedDiet(diet); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                style={[
-                  sStyles.filterChip,
-                  { backgroundColor: active ? color : colors.card, borderColor: active ? color : colors.border },
-                ]}
-              >
-                {diet !== "All" && (
-                  <Ionicons
-                    name={DIET_ICONS[diet] as any}
-                    size={14}
-                    color={active ? "#fff" : color}
-                    style={{ marginRight: 4 }}
-                  />
-                )}
-                <Text style={[sStyles.filterChipText, { color: active ? "#fff" : colors.textSecondary, fontFamily: "Outfit_700Bold" }]}>
-                  {diet}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <FilterRow
+          label="Dietary Preference"
+          options={DIET_TYPES}
+          selected={selectedDiet}
+          colors={DIET_COLORS}
+          icons={DIET_ICONS}
+          value={selectedDiet}
+          onChange={setSelectedDiet}
+        />
+        <FilterRow
+          label="Meal Category"
+          options={MEAL_TYPES}
+          selected={selectedMeal}
+          colors={MEAL_COLORS}
+          icons={MEAL_ICONS}
+          value={selectedMeal}
+          onChange={setSelectedMeal}
+        />
+        <FilterRow
+          label="Training Goal"
+          options={GOALS}
+          selected={selectedGoal}
+          colors={GOAL_COLORS}
+          icons={GOAL_ICONS}
+          value={selectedGoal}
+          onChange={setSelectedGoal}
+        />
 
-        {/* Goal Filter */}
-        <Text style={[sStyles.filterLabel, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold", marginTop: 4 }]}>
-          Training Goal
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={sStyles.filterRow}
-        >
-          {(["All", ...GOALS] as (Goal | "All")[]).map((goal) => {
-            const active = selectedGoal === goal;
-            const color = goal === "All" ? colors.tint : GOAL_COLORS[goal];
-            return (
-              <Pressable
-                key={goal}
-                onPress={() => { setSelectedGoal(goal); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                style={[
-                  sStyles.filterChip,
-                  { backgroundColor: active ? color : colors.card, borderColor: active ? color : colors.border },
-                ]}
-              >
-                {goal !== "All" && (
-                  <Ionicons
-                    name={GOAL_ICONS[goal] as any}
-                    size={13}
-                    color={active ? "#fff" : color}
-                    style={{ marginRight: 4 }}
-                  />
-                )}
-                <Text style={[sStyles.filterChipText, { color: active ? "#fff" : colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
-                  {goal}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Diet legend */}
-        <View style={[sStyles.legendCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {DIET_TYPES.map((d) => (
-            <View key={d} style={sStyles.legendItem}>
-              <View style={[sStyles.legendDot, { backgroundColor: DIET_COLORS[d] }]} />
-              <Text style={[sStyles.legendText, { color: colors.textSecondary, fontFamily: "Outfit_400Regular" }]}>{d}</Text>
-            </View>
-          ))}
-        </View>
+        {activeFilters > 0 && (
+          <Pressable
+            onPress={() => { setSelectedDiet("All"); setSelectedMeal("All"); setSelectedGoal("All"); }}
+            style={[sStyles.clearBtn, { borderColor: colors.border }]}
+          >
+            <Ionicons name="close-circle-outline" size={16} color={colors.textSecondary} />
+            <Text style={[sStyles.clearBtnText, { color: colors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+              Clear {activeFilters} filter{activeFilters > 1 ? "s" : ""}
+            </Text>
+          </Pressable>
+        )}
 
         {filtered.length === 0 ? (
           <View style={[sStyles.emptyState, { borderColor: colors.border }]}>
             <Ionicons name="restaurant-outline" size={48} color={colors.textMuted} />
             <Text style={[sStyles.emptyText, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
-              No recipes match your filters
+              No recipes match
             </Text>
             <Text style={[sStyles.emptyHint, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-              Try changing your dietary preference or goal
+              Try adjusting your filters
             </Text>
           </View>
         ) : (
@@ -862,11 +1369,7 @@ export default function RecipesScreen() {
         )}
       </ScrollView>
 
-      <RecipeDetailModal
-        recipe={selectedRecipe}
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
+      <RecipeDetailModal recipe={selectedRecipe} visible={modalVisible} onClose={() => setModalVisible(false)} />
     </View>
   );
 }
@@ -874,33 +1377,35 @@ export default function RecipesScreen() {
 const sStyles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 16 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 },
   title: { fontSize: 28 },
   subtitle: { fontSize: 14, marginTop: 2 },
-  filterLabel: { fontSize: 12, letterSpacing: 0.6, marginBottom: 8, textTransform: "uppercase" },
+  countBadge: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, alignItems: "center" },
+  countText: { fontSize: 22, lineHeight: 26 },
+  countLabel: { fontSize: 11 },
+  filterLabel: { fontSize: 11, letterSpacing: 0.8, marginBottom: 8, textTransform: "uppercase" },
   filterRow: { paddingBottom: 14, gap: 8 },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
   },
   filterChipText: { fontSize: 13 },
-  legendCard: {
+  clearBtn: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 20,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  legendDot: { width: 9, height: 9, borderRadius: 5 },
-  legendText: { fontSize: 12 },
+  clearBtnText: { fontSize: 13 },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
@@ -909,6 +1414,7 @@ const sStyles = StyleSheet.create({
     borderStyle: "dashed",
     borderRadius: 20,
     gap: 10,
+    marginTop: 8,
   },
   emptyText: { fontSize: 16 },
   emptyHint: { fontSize: 13 },
