@@ -195,7 +195,7 @@ export default function ProfileScreen() {
   const maxCatCount = Math.max(1, ...Object.values(byCategory));
 
   const handleShare = async () => {
-    const msg = `BioHack Stats\nActive Days: ${totalActiveDays} | Total Completions: ${totalCompletions}\nLongest Streak: ${longestStreak} days\n\nMy habits:\n${habits.map(h => `  ${h.name} — ${getStreak(h)} day streak`).join("\n")}\n\nTracking performance with BioHack!`;
+    const msg = `PerformX Stats\nActive Days: ${totalActiveDays} | Total Completions: ${totalCompletions}\nLongest Streak: ${longestStreak} days\n\nMy habits:\n${habits.map(h => `  ${h.name} — ${getStreak(h)} day streak`).join("\n")}\n\nTracking performance with PerformX!`;
     try { await Share.share({ message: msg }); } catch {}
   };
 
@@ -486,7 +486,7 @@ export default function ProfileScreen() {
         <View style={[pStyles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="flash" size={18} color={colors.tint} />
           <Text style={[pStyles.versionText, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
-            BioHack v1.0 — Built for athletes, ravers & powerlifters
+            PerformX v1.0 — Built for athletes, ravers & powerlifters
           </Text>
         </View>
       </ScrollView>

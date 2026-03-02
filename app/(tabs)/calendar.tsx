@@ -237,7 +237,7 @@ export default function StatsScreen() {
 
   // ── Share ───────────────────────────────────────────────────────────────────
   const handleShare = async () => {
-    let msg = "BioHack Stats\n";
+    let msg = "PerformX Stats\n";
     if (period === "daily") {
       msg += `${formatDateFull(selectedDate)}\n${Math.round(daily.rate * 100)}% — ${daily.don.length}/${daily.sch.length} habits done`;
     } else if (period === "weekly") {
@@ -245,7 +245,7 @@ export default function StatsScreen() {
     } else {
       msg += `${MONTHS_FULL[viewMonth]} ${viewYear}\nActive ${monthly.activeDays} days — Avg ${Math.round(monthly.avgRate * 100)}%`;
     }
-    msg += "\n\nTracked with BioHack!";
+    msg += "\n\nTracked with PerformX!";
     try { await Share.share({ message: msg }); } catch {}
   };
 

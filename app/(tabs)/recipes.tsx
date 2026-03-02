@@ -1360,7 +1360,7 @@ function RecipeDetailModal({ recipe, visible, onClose }: { recipe: Recipe | null
   const maxMacro = Math.max(recipe.macros.protein, recipe.macros.carbs, recipe.macros.fat);
 
   const handleShare = async () => {
-    const msg = `${recipe.name}\n${recipe.meal} | ${recipe.diet}\nGoal: ${recipe.goal} | ${recipe.prepTime}\n\nIngredients:\n${recipe.ingredients.map(i => `• ${i}`).join("\n")}\n\nMacros: ${recipe.macros.protein}g protein, ${recipe.macros.carbs}g carbs, ${recipe.macros.fat}g fat, ${recipe.macros.calories} kcal\n\nBioHack — Track. Fuel. Perform.`;
+    const msg = `${recipe.name}\n${recipe.meal} | ${recipe.diet}\nGoal: ${recipe.goal} | ${recipe.prepTime}\n\nIngredients:\n${recipe.ingredients.map(i => `• ${i}`).join("\n")}\n\nMacros: ${recipe.macros.protein}g protein, ${recipe.macros.carbs}g carbs, ${recipe.macros.fat}g fat, ${recipe.macros.calories} kcal\n\nPerformX — Track. Fuel. Perform.`;
     try { await Share.share({ message: msg }); } catch {}
   };
 
@@ -1530,7 +1530,7 @@ function MealPreferenceModal({
 
   const handleShare = async () => {
     const lines: string[] = [
-      "My Meal Preferences — BioHack",
+      "My Meal Preferences — PerformX",
       "",
       form.name ? `Athlete: ${form.name}` : "",
       form.diet ? `Diet: ${form.diet}` : "",
@@ -1540,7 +1540,7 @@ function MealPreferenceModal({
       "",
       form.notes ? `Notes for Dietician:\n${form.notes}` : "",
       "",
-      "Shared from BioHack — Performance Habit Tracker",
+      "Shared from PerformX — Performance Habit Tracker",
     ].filter(Boolean);
     try { await Share.share({ message: lines.join("\n") }); } catch {}
   };
@@ -1874,7 +1874,7 @@ export default function RecipesScreen() {
 
   const sharePref = async (pref: MealPreference) => {
     const lines = [
-      "My Meal Preferences — BioHack",
+      "My Meal Preferences — PerformX",
       "",
       pref.name ? `Athlete: ${pref.name}` : "",
       pref.diet ? `Diet: ${pref.diet}` : "",
@@ -1884,7 +1884,7 @@ export default function RecipesScreen() {
       "",
       pref.notes ? `Notes for Dietician:\n${pref.notes}` : "",
       "",
-      "Shared from BioHack — Performance Habit Tracker",
+      "Shared from PerformX — Performance Habit Tracker",
     ].filter(Boolean);
     try { await Share.share({ message: lines.join("\n") }); } catch {}
   };

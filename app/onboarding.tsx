@@ -102,7 +102,7 @@ export default function OnboardingScreen() {
             <View style={s.logoCircle}>
               <Ionicons name="flash" size={28} color={TINT} />
             </View>
-            <Text style={[s.brandName, { color: TEXT }]}>BioHack</Text>
+            <Text style={[s.brandName, { color: TEXT }]}>PerformX</Text>
           </View>
 
           <Text style={[s.title, { color: TEXT }]}>

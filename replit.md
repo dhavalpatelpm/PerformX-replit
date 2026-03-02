@@ -1,8 +1,8 @@
-# BioHack — replit.md
+# PerformX — replit.md
 
 ## Overview
 
-BioHack is a biohacking habit-tracker mobile app built with **Expo / React Native** and **Expo Router**. Users can create and manage daily habits across six categories (Training, Recovery, Nutrition, Mental, Personal, Work), track streaks, view a calendar heatmap, browse performance recipes, and receive smart nudge notifications. The app ships with a lightweight **Express** backend. All habit data lives on-device in **AsyncStorage**.
+PerformX is a performance habit-tracker mobile app built with **Expo / React Native** and **Expo Router**. Users can create and manage daily habits across six categories (Training, Recovery, Nutrition, Mental, Personal, Work), track streaks, view a calendar heatmap, browse performance recipes, and receive smart nudge notifications. The app ships with a lightweight **Express** backend. All habit data lives on-device in **AsyncStorage**.
 
 ---
 
