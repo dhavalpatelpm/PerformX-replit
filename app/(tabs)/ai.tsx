@@ -350,7 +350,7 @@ export default function AiScreen() {
           <TextInput
             ref={inputRef}
             style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
-            placeholder="Ask your coach..."
+            placeholder="Ask your PerformX AI Coach..."
             placeholderTextColor={colors.textSecondary}
             value={input}
             onChangeText={setInput}
