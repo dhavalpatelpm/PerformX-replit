@@ -1219,44 +1219,42 @@ const rdStyles = StyleSheet.create({
 function FilterRow({
   label,
   options,
-  selected,
-  colors: optColors,
-  icons: optIcons,
+  optionColors,
+  optionIcons,
   value,
   onChange,
-  colors: themeColors,
+  theme,
 }: {
   label: string;
   options: string[];
-  selected: string;
-  colors: Record<string, string>;
-  icons: Record<string, string>;
+  optionColors: Record<string, string>;
+  optionIcons: Record<string, string>;
   value: string;
   onChange: (v: any) => void;
-  colors: any;
+  theme: ReturnType<typeof useTheme>["colors"];
 }) {
   return (
     <>
-      <Text style={[sStyles.filterLabel, { color: themeColors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+      <Text style={[sStyles.filterLabel, { color: theme.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
         {label}
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sStyles.filterRow}>
         {(["All", ...options] as string[]).map((opt) => {
           const active = value === opt;
-          const color = opt === "All" ? themeColors.tint : optColors[opt];
+          const color = opt === "All" ? theme.tint : optionColors[opt];
           return (
             <Pressable
               key={opt}
               onPress={() => { onChange(opt); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
               style={[
                 sStyles.filterChip,
-                { backgroundColor: active ? color : themeColors.card, borderColor: active ? color : themeColors.border },
+                { backgroundColor: active ? color : theme.card, borderColor: active ? color : theme.border },
               ]}
             >
               {opt !== "All" && (
-                <Ionicons name={optIcons[opt] as any} size={13} color={active ? "#fff" : color} style={{ marginRight: 4 }} />
+                <Ionicons name={optionIcons[opt] as any} size={13} color={active ? "#fff" : color} style={{ marginRight: 4 }} />
               )}
-              <Text style={[sStyles.filterChipText, { color: active ? "#fff" : themeColors.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
+              <Text style={[sStyles.filterChipText, { color: active ? "#fff" : theme.textSecondary, fontFamily: "Outfit_600SemiBold" }]}>
                 {opt}
               </Text>
             </Pressable>
@@ -1315,29 +1313,29 @@ export default function RecipesScreen() {
         <FilterRow
           label="Dietary Preference"
           options={DIET_TYPES}
-          selected={selectedDiet}
-          colors={DIET_COLORS}
-          icons={DIET_ICONS}
+          optionColors={DIET_COLORS}
+          optionIcons={DIET_ICONS}
           value={selectedDiet}
           onChange={setSelectedDiet}
+          theme={colors}
         />
         <FilterRow
           label="Meal Category"
           options={MEAL_TYPES}
-          selected={selectedMeal}
-          colors={MEAL_COLORS}
-          icons={MEAL_ICONS}
+          optionColors={MEAL_COLORS}
+          optionIcons={MEAL_ICONS}
           value={selectedMeal}
           onChange={setSelectedMeal}
+          theme={colors}
         />
         <FilterRow
           label="Training Goal"
           options={GOALS}
-          selected={selectedGoal}
-          colors={GOAL_COLORS}
-          icons={GOAL_ICONS}
+          optionColors={GOAL_COLORS}
+          optionIcons={GOAL_ICONS}
           value={selectedGoal}
           onChange={setSelectedGoal}
+          theme={colors}
         />
 
         {activeFilters > 0 && (
