@@ -13,6 +13,7 @@ import {
   Modal,
   Alert,
   Linking,
+  ActionSheetIOS,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -86,13 +87,9 @@ export default function ProfileEditScreen() {
     router.back();
   };
 
-  const waitForModalClose = () => new Promise<void>(r => setTimeout(r, 500));
-
-  const pickFromGallery = async () => {
-    setShowPicModal(false);
-    await waitForModalClose();
+  // Core launcher — called AFTER any sheet/modal is fully gone
+  const launchGallery = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    // "limited" = user picked specific photos on iOS 14+ — still usable
     const allowed = perm.status === "granted" || perm.status === "limited";
     if (!allowed) {
       Alert.alert(
@@ -116,10 +113,7 @@ export default function ProfileEditScreen() {
     }
   };
 
-  const pickFromCamera = async () => {
-    setShowPicModal(false);
-    if (Platform.OS === "web") return;
-    await waitForModalClose();
+  const launchCamera = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (perm.status !== "granted") {
       Alert.alert(
@@ -140,6 +134,42 @@ export default function ProfileEditScreen() {
     if (!result.canceled && result.assets?.[0]?.uri) {
       update("profilePicUri", result.assets[0].uri);
     }
+  };
+
+  // On iOS use native ActionSheetIOS — avoids all modal-animation race conditions
+  const handleAvatarPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === "ios") {
+      const options = ["Cancel", "Choose from Gallery", "Take a Photo", ...(form.profilePicUri ? ["Remove Photo"] : [])];
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: form.profilePicUri ? options.length - 1 : undefined,
+          title: "Profile Photo",
+        },
+        (idx) => {
+          if (idx === 1) launchGallery();
+          else if (idx === 2) launchCamera();
+          else if (idx === 3 && form.profilePicUri) update("profilePicUri", "");
+        }
+      );
+    } else {
+      setShowPicModal(true);
+    }
+  };
+
+  // Android/Web modal pickers (close modal, wait for dismiss, then launch)
+  const pickFromGallery = async () => {
+    setShowPicModal(false);
+    await new Promise<void>(r => setTimeout(r, 400));
+    launchGallery();
+  };
+
+  const pickFromCamera = async () => {
+    setShowPicModal(false);
+    await new Promise<void>(r => setTimeout(r, 400));
+    launchCamera();
   };
 
   const initials = getInitials();
@@ -174,7 +204,7 @@ export default function ProfileEditScreen() {
           {/* Avatar */}
           <View style={s.avatarSection}>
             <Pressable
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowPicModal(true); }}
+              onPress={handleAvatarPress}
               style={s.avatarWrap}
             >
               {form.profilePicUri ? (
