@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, AppStateStatus } from "react-native";
 
 export type HabitCategory = "Training" | "Recovery" | "Nutrition" | "Mental" | "Personal" | "Work";
 
@@ -163,7 +164,22 @@ const DEFAULT_HABITS: Habit[] = [...TRAINING_HABITS, ...DAILY_HABITS];
 
 export function HabitsProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>(DEFAULT_HABITS);
-  const todayKey = getTodayKey();
+  const [todayKey, setTodayKey] = useState(getTodayKey);
+
+  // Auto-refresh when app comes to foreground (e.g. opened next morning)
+  useEffect(() => {
+    const refresh = (state: AppStateStatus) => {
+      if (state === "active") setTodayKey(getTodayKey());
+    };
+    const sub = AppState.addEventListener("change", refresh);
+    return () => sub.remove();
+  }, []);
+
+  // Also tick every minute to catch midnight crossover if app stays open
+  useEffect(() => {
+    const id = setInterval(() => setTodayKey(getTodayKey()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
