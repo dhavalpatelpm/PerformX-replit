@@ -374,17 +374,17 @@ function SwipeableHabitRow({
 
   return (
     <View style={styles.swipeWrapper}>
-      <View style={[styles.actionLeft, { backgroundColor: "#FF3B30", borderRadius: 16 }]}>
-        <Pressable onPress={handleDelete} style={styles.actionBtn} hitSlop={8}>
-          <Ionicons name="trash-outline" size={22} color="#fff" />
-          <Text style={[styles.actionLabel, { fontFamily: "Outfit_600SemiBold" }]}>Delete</Text>
-        </Pressable>
-      </View>
-
-      <View style={[styles.actionRight, { backgroundColor: "#FF8C00", borderRadius: 16 }]}>
+      <View style={[styles.actionLeft, { backgroundColor: "#FF8C00", borderRadius: 16 }]}>
         <Pressable onPress={handleEdit} style={styles.actionBtn} hitSlop={8}>
           <Ionicons name="pencil-outline" size={22} color="#fff" />
           <Text style={[styles.actionLabel, { fontFamily: "Outfit_600SemiBold" }]}>Edit</Text>
+        </Pressable>
+      </View>
+
+      <View style={[styles.actionRight, { backgroundColor: "#FF3B30", borderRadius: 16 }]}>
+        <Pressable onPress={handleDelete} style={styles.actionBtn} hitSlop={8}>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
+          <Text style={[styles.actionLabel, { fontFamily: "Outfit_600SemiBold" }]}>Delete</Text>
         </Pressable>
       </View>
 
@@ -636,12 +636,12 @@ export default function TodayScreen() {
             <View style={styles.swipeHintInner}>
               <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
               <Text style={[styles.swipeHintText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-                Swipe left to edit
+                Swipe left to delete
               </Text>
             </View>
             <View style={styles.swipeHintInner}>
               <Text style={[styles.swipeHintText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-                Swipe right to delete
+                Swipe right to edit
               </Text>
               <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
             </View>
