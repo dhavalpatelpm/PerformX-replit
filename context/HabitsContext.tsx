@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
+import { scheduleHabitNotifications, cancelHabitNotification } from "@/lib/notifications";
 
 export type HabitCategory = "Training" | "Recovery" | "Nutrition" | "Mental" | "Personal" | "Work";
 
@@ -208,6 +209,18 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }, []);
 
+  // Schedule nudge notifications for today's incomplete habits
+  useEffect(() => {
+    const getCategoryRatePct = (category: HabitCategory): number => {
+      const dow = new Date().getDay();
+      const di  = dow === 0 ? 6 : dow - 1;
+      const cat = habits.filter(h => h.category === category && (!h.scheduledDays || h.scheduledDays.includes(di)));
+      if (!cat.length) return 0;
+      return (cat.filter(h => h.completedDates.includes(todayKey)).length / cat.length) * 100;
+    };
+    scheduleHabitNotifications(habits, todayKey, getCategoryRatePct).catch(() => {});
+  }, [habits, todayKey]);
+
   const toggleHabit = useCallback(
     (id: string) => {
       setHabits((prev) => {
@@ -217,6 +230,8 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
           const completedDates = hasToday
             ? h.completedDates.filter((d) => d !== todayKey)
             : [...h.completedDates, todayKey];
+          // Cancel the pending nudge immediately when habit is checked off
+          if (!hasToday) cancelHabitNotification(id).catch(() => {});
           return { ...h, completedDates };
         });
         persist(updated);

@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { HabitsProvider } from "@/context/HabitsContext";
+import { requestNotificationPermissions } from "@/lib/notifications";
 import {
   useFonts,
   Outfit_400Regular,
@@ -41,6 +42,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    requestNotificationPermissions();
+  }, []);
 
   if (!fontsLoaded) return null;
 

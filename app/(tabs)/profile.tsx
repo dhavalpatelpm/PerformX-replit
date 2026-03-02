@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Share,
   Switch,
 } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -103,6 +104,28 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
+
+  const [notifGranted, setNotifGranted] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Notifications.getPermissionsAsync().then(({ status }) => {
+      setNotifGranted(status === "granted");
+    });
+  }, []);
+
+  const handleNotifToggle = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!notifGranted) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      setNotifGranted(status === "granted");
+    } else {
+      // Can't revoke programmatically — open settings
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      setNotifGranted(false);
+    }
+  }, [notifGranted]);
 
   const completedDays = getCompletedDays();
   const totalActiveDays = completedDays.size;
@@ -253,6 +276,29 @@ export default function ProfileScreen() {
               }}
               trackColor={{ false: colors.border, true: colors.tint + "80" }}
               thumbColor={isDark ? colors.tint : "#F5F7FA"}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+          <View style={[pStyles.divider, { backgroundColor: colors.border }]} />
+          <View style={pStyles.settingRow}>
+            <View style={pStyles.settingLeft}>
+              <View style={[pStyles.settingIcon, { backgroundColor: "#00E676" + "20" }]}>
+                <Ionicons name="notifications-outline" size={18} color="#00E676" />
+              </View>
+              <View>
+                <Text style={[pStyles.settingName, { color: colors.text, fontFamily: "Outfit_600SemiBold" }]}>
+                  Nudge Notifications
+                </Text>
+                <Text style={[pStyles.settingDesc, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                  Reminders with category benefit %
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={notifGranted}
+              onValueChange={handleNotifToggle}
+              trackColor={{ false: colors.border, true: "#00E676" + "80" }}
+              thumbColor={notifGranted ? "#00E676" : "#F5F7FA"}
               ios_backgroundColor={colors.border}
             />
           </View>
