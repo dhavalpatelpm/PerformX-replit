@@ -504,11 +504,11 @@ export default function ProfileScreen() {
           <Text style={[pStyles.footerTagline, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
             Fuel it up!
           </Text>
-          <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+          <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
             Crafted by Dhaval Patel
           </Text>
           <Text style={pStyles.footerHeart}>{"❤️"}</Text>
-          <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+          <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
             in Ahmedabad, India
           </Text>
         </View>
@@ -562,8 +562,8 @@ const pStyles = StyleSheet.create({
   footerBlock:      { alignItems: "flex-start", paddingTop: 28, paddingBottom: 12, gap: 8 },
   footerTagline:    { fontSize: 32, letterSpacing: -0.5 },
   footerCreditRow:  { flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
-  footerCredit:     { fontSize: 13 },
-  footerHeart:      { fontSize: 13 },
+  footerCredit:     { fontSize: 22 },
+  footerHeart:      { fontSize: 22 },
   bmiCard: { borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, overflow: "hidden" },
   bmiTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
   bmiLabel: { fontSize: 13, marginBottom: 4 },
