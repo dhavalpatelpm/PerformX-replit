@@ -504,15 +504,13 @@ export default function ProfileScreen() {
           <Text style={[pStyles.footerTagline, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
             Fuel it up!
           </Text>
-          <View style={pStyles.footerCreditRow}>
-            <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
-              Crafted by Dhaval Patel{" "}
-            </Text>
-            <Text style={pStyles.footerHeart}>{"❤️"}</Text>
-            <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
-              {" "}in Ahmedabad, India
-            </Text>
-          </View>
+          <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+            Crafted by Dhaval Patel
+          </Text>
+          <Text style={pStyles.footerHeart}>{"❤️"}</Text>
+          <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+            in Ahmedabad, India
+          </Text>
         </View>
       </ScrollView>
     </View>
