@@ -1311,7 +1311,7 @@ function MealPreferenceModal({
             <TextInput
               value={form.name}
               onChangeText={v => setForm(f => ({ ...f, name: v }))}
-              placeholder="e.g. Rahul Sharma"
+              placeholder="e.g. Dhaval Patel"
               placeholderTextColor={colors.textMuted}
               style={[mpStyles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" }]}
             />
