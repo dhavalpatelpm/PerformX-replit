@@ -42,12 +42,13 @@ function TypingDots() {
   const d3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const native = Platform.OS !== "web";
     const bounce = (d: Animated.Value, delay: number) =>
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(d, { toValue: -5, duration: 280, useNativeDriver: true }),
-          Animated.timing(d, { toValue: 0, duration: 280, useNativeDriver: true }),
+          Animated.timing(d, { toValue: -5, duration: 280, useNativeDriver: native }),
+          Animated.timing(d, { toValue: 0, duration: 280, useNativeDriver: native }),
           Animated.delay(600 - delay),
         ])
       );
@@ -359,15 +360,22 @@ export default function AiScreen() {
             style={({ pressed }) => [
               s.sendBtn,
               {
-                backgroundColor: input.trim() && !isLoading ? NEON : colors.border,
-                opacity: pressed ? 0.8 : 1,
+                backgroundColor: input.trim() && !isLoading ? NEON : colors.card,
+                borderWidth: input.trim() && !isLoading ? 0 : 1.5,
+                borderColor: colors.border,
+                shadowOpacity: input.trim() && !isLoading ? 0.45 : 0,
+                opacity: pressed ? 0.75 : 1,
               },
             ]}
           >
             {isLoading ? (
-              <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
+              <Ionicons name="ellipsis-horizontal" size={20} color={NEON} />
             ) : (
-              <Ionicons name="send" size={17} color={input.trim() ? "#000" : colors.textSecondary} />
+              <Ionicons
+                name="arrow-up"
+                size={20}
+                color={input.trim() ? "#000" : colors.textSecondary}
+              />
             )}
           </Pressable>
         </View>
@@ -497,22 +505,28 @@ const s = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: NEON },
 
   /* Chips bar */
-  chipsBarScroll: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  chipsBarScroll: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    alignItems: "center",
+  },
   chipBar: {
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignSelf: "center",
   },
   chipBarText: { fontSize: 12 },
 
   /* Input */
   inputBar: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     gap: 10,
     paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   input: {
@@ -527,11 +541,16 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    shadowColor: NEON,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });
