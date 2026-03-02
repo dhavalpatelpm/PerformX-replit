@@ -499,6 +499,21 @@ export default function ProfileScreen() {
             PerformX v1.0 — Built for athletes, ravers & powerlifters
           </Text>
         </View>
+
+        <View style={pStyles.footerBlock}>
+          <Text style={[pStyles.footerTagline, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
+            Fuel it up!
+          </Text>
+          <View style={pStyles.footerCreditRow}>
+            <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+              Crafted by Dhaval Patel{" "}
+            </Text>
+            <Text style={pStyles.footerHeart}>{"❤️"}</Text>
+            <Text style={[pStyles.footerCredit, { color: colors.textMuted, fontFamily: "Outfit_500Medium" }]}>
+              {" "}in Ahmedabad, India
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -546,6 +561,11 @@ const pStyles = StyleSheet.create({
   divider: { height: 1 },
   versionCard: { borderRadius: 14, padding: 14, borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   versionText: { fontSize: 13, flex: 1 },
+  footerBlock:      { alignItems: "center", paddingTop: 28, paddingBottom: 12, gap: 8 },
+  footerTagline:    { fontSize: 32, letterSpacing: -0.5 },
+  footerCreditRow:  { flexDirection: "row", alignItems: "center", flexWrap: "wrap", justifyContent: "center" },
+  footerCredit:     { fontSize: 13 },
+  footerHeart:      { fontSize: 13 },
   bmiCard: { borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, overflow: "hidden" },
   bmiTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
   bmiLabel: { fontSize: 13, marginBottom: 4 },
