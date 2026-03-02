@@ -37,7 +37,15 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PerformX needs access to your photos to set a profile picture.",
+          "cameraPermission": "PerformX needs your camera to take a profile photo.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

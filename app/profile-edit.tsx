@@ -11,6 +11,8 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  Alert,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -84,12 +86,27 @@ export default function ProfileEditScreen() {
     router.back();
   };
 
+  const waitForModalClose = () => new Promise<void>(r => setTimeout(r, 350));
+
   const pickFromGallery = async () => {
     setShowPicModal(false);
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return;
+    await waitForModalClose();
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      if (!canAskAgain) {
+        Alert.alert(
+          "Photos Access Denied",
+          "PerformX needs photo library access to set your profile picture. Please enable it in Settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -102,8 +119,21 @@ export default function ProfileEditScreen() {
   const pickFromCamera = async () => {
     setShowPicModal(false);
     if (Platform.OS === "web") return;
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return;
+    await waitForModalClose();
+    const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      if (!canAskAgain) {
+        Alert.alert(
+          "Camera Access Denied",
+          "PerformX needs camera access to take a profile photo. Please enable it in Settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
+      return;
+    }
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
