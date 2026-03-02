@@ -76,6 +76,8 @@ const HABIT_ICONS = [
   "nutrition-outline",
   "stopwatch-outline",
   "fitness-outline",
+  "footsteps-outline",
+  "sunny-outline",
 ];
 
 function HabitForm({
