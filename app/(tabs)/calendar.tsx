@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
 } from "react-native";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -603,6 +604,18 @@ export default function StatsScreen() {
             )}
           </>
         )}
+
+        <Pressable
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/(tabs)/profile"); }}
+          style={styles.statsHint}
+        >
+          <Ionicons name="information-circle-outline" size={15} color="#B0B8C8" style={{ marginTop: 1 }} />
+          <Text style={[styles.statsHintText, { fontFamily: "Outfit_400Regular" }]}>
+            For a deeper look at category-level performance, visit the{" "}
+            <Text style={{ fontFamily: "Outfit_600SemiBold", color: "#C8D0DC" }}>Stats</Text>
+            {" "}page — you'll find your top streaks broken down weekly and monthly.
+          </Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -687,4 +700,6 @@ const styles = StyleSheet.create({
   dayHabitBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   dayHabitBadgeTxt: { fontSize: 11 },
   emptyTxt: { fontSize: 14 },
+  statsHint:     { flexDirection: "row", alignItems: "flex-start", gap: 7, marginTop: 8, marginBottom: 4, paddingHorizontal: 4 },
+  statsHintText: { flex: 1, fontSize: 13, color: "#B0B8C8", lineHeight: 20 },
 });
