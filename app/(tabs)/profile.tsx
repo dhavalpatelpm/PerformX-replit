@@ -523,16 +523,16 @@ export default function ProfileScreen() {
           Habit Streaks
         </Text>
 
+        <View style={pStyles.monthlyHeader}>
+          <Ionicons name="calendar-outline" size={16} color={colors.tint} />
+          <Text style={[pStyles.streakBlockTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
+            Weekly Top 5
+          </Text>
+          <Text style={[pStyles.streakBlockSub, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+            this week
+          </Text>
+        </View>
         <View style={[pStyles.streakBlock, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={pStyles.streakBlockHeader}>
-            <Ionicons name="calendar-outline" size={16} color={colors.tint} />
-            <Text style={[pStyles.streakBlockTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
-              Weekly Top 5
-            </Text>
-            <Text style={[pStyles.streakBlockSub, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
-              this week
-            </Text>
-          </View>
           {weeklyTop5.map((item, i) => (
             <WeeklyTopRow key={item.id} item={item} rank={i} />
           ))}
