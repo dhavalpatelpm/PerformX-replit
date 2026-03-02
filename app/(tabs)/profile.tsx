@@ -693,12 +693,12 @@ export default function ProfileScreen() {
           <Text style={[pStyles.footerTagline, { color: colors.tint, fontFamily: "Outfit_800ExtraBold" }]}>
             Fuel it up!
           </Text>
-          <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
+          <Text style={[pStyles.footerCredit, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
             Crafted by{" "}
             <Text style={{ fontSize: 20 }}>Dhaval Patel</Text>
           </Text>
           <Text style={pStyles.footerHeart}>{"❤️"}</Text>
-          <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
+          <Text style={[pStyles.footerCredit, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
             in Ahmedabad, India
           </Text>
         </View>
