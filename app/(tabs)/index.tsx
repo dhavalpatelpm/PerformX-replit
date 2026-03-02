@@ -277,10 +277,14 @@ function SwipeableHabitRow({
   habit,
   onEdit,
   onDelete,
+  onSwipeActive,
+  onSwipeEnd,
 }: {
   habit: Habit;
   onEdit: () => void;
   onDelete: () => void;
+  onSwipeActive: () => void;
+  onSwipeEnd: () => void;
 }) {
   const { colors } = useTheme();
   const { toggleHabit, getStreak, isCompletedToday } = useHabits();
@@ -291,41 +295,47 @@ function SwipeableHabitRow({
   const translateX = useRef(new Animated.Value(0)).current;
   const snappedOffset = useRef(0);
 
-  const snapToValue = useCallback(
-    (toValue: number, callback?: () => void) => {
-      Animated.spring(translateX, {
-        toValue,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 220,
-        mass: 0.8,
-      }).start(callback);
-    },
-    [translateX]
-  );
+  // Refs to always hold latest callbacks — avoids stale closure in PanResponder
+  const onSwipeActiveRef = useRef(onSwipeActive);
+  onSwipeActiveRef.current = onSwipeActive;
+  const onSwipeEndRef = useRef(onSwipeEnd);
+  onSwipeEndRef.current = onSwipeEnd;
 
-  const close = useCallback(() => {
+  const snapToValue = (toValue: number) => {
+    Animated.spring(translateX, {
+      toValue,
+      useNativeDriver: false,
+      damping: 22,
+      stiffness: 240,
+      mass: 0.7,
+    }).start();
+  };
+
+  const close = () => {
     snappedOffset.current = 0;
     snapToValue(0);
-  }, [snapToValue]);
+  };
+
+  const isHorizontal = (gs: any) =>
+    Math.abs(gs.dx) > 5 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.3,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponderCapture: (_, gs) => isHorizontal(gs),
+      onMoveShouldSetPanResponder: (_, gs) => isHorizontal(gs),
       onPanResponderGrant: () => {
         translateX.stopAnimation();
+        onSwipeActiveRef.current?.();
       },
       onPanResponderMove: (_, gs) => {
-        const base = snappedOffset.current;
-        const raw = base + gs.dx;
-        const clamped = Math.max(-ACTION_WIDTH, Math.min(ACTION_WIDTH, raw));
+        const clamped = Math.max(-ACTION_WIDTH, Math.min(ACTION_WIDTH, snappedOffset.current + gs.dx));
         translateX.setValue(clamped);
       },
       onPanResponderRelease: (_, gs) => {
+        onSwipeEndRef.current?.();
         const base = snappedOffset.current;
-        const totalDx = base + gs.dx;
 
         if (gs.dx < -SWIPE_THRESHOLD && base >= 0) {
           snappedOffset.current = -ACTION_WIDTH;
@@ -345,9 +355,10 @@ function SwipeableHabitRow({
           snapToValue(snappedOffset.current);
         }
       },
+      onPanResponderTerminationRequest: () => false,
       onPanResponderTerminate: () => {
-        snappedOffset.current = 0;
-        snapToValue(0);
+        onSwipeEndRef.current?.();
+        snapToValue(snappedOffset.current);
       },
     })
   ).current;
@@ -467,6 +478,8 @@ export default function TodayScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<HabitCategory | "All">("All");
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const activeSwipes = useRef(0);
 
   const progress = getTodayProgress();
   const completedCount = habits.filter(isCompletedToday).length;
@@ -477,6 +490,16 @@ export default function TodayScreen() {
       : habits.filter((h) => h.category === selectedCategory);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const handleSwipeActive = useCallback(() => {
+    activeSwipes.current += 1;
+    setScrollEnabled(false);
+  }, []);
+
+  const handleSwipeEnd = useCallback(() => {
+    activeSwipes.current = Math.max(0, activeSwipes.current - 1);
+    if (activeSwipes.current === 0) setScrollEnabled(true);
+  }, []);
 
   const handleShare = async () => {
     const lines = habits
@@ -501,6 +524,8 @@ export default function TodayScreen() {
           { paddingTop: topPad + 16, paddingBottom: insets.bottom + 160 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={scrollEnabled}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
           <View>
@@ -624,6 +649,8 @@ export default function TodayScreen() {
               <SwipeableHabitRow
                 key={habit.id}
                 habit={habit}
+                onSwipeActive={handleSwipeActive}
+                onSwipeEnd={handleSwipeEnd}
                 onEdit={() => setEditingHabit(habit)}
                 onDelete={() => removeHabit(habit.id)}
               />
