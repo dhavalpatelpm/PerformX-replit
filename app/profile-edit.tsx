@@ -86,32 +86,32 @@ export default function ProfileEditScreen() {
     router.back();
   };
 
-  const waitForModalClose = () => new Promise<void>(r => setTimeout(r, 350));
+  const waitForModalClose = () => new Promise<void>(r => setTimeout(r, 500));
 
   const pickFromGallery = async () => {
     setShowPicModal(false);
     await waitForModalClose();
-    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      if (!canAskAgain) {
-        Alert.alert(
-          "Photos Access Denied",
-          "PerformX needs photo library access to set your profile picture. Please enable it in Settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => Linking.openSettings() },
-          ]
-        );
-      }
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // "limited" = user picked specific photos on iOS 14+ — still usable
+    const allowed = perm.status === "granted" || perm.status === "limited";
+    if (!allowed) {
+      Alert.alert(
+        "Photos Access Required",
+        "Please allow PerformX to access your photos in Settings.",
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]?.uri) {
       update("profilePicUri", result.assets[0].uri);
     }
   };
@@ -120,18 +120,16 @@ export default function ProfileEditScreen() {
     setShowPicModal(false);
     if (Platform.OS === "web") return;
     await waitForModalClose();
-    const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      if (!canAskAgain) {
-        Alert.alert(
-          "Camera Access Denied",
-          "PerformX needs camera access to take a profile photo. Please enable it in Settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => Linking.openSettings() },
-          ]
-        );
-      }
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert(
+        "Camera Access Required",
+        "Please allow PerformX to access your camera in Settings.",
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]
+      );
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -139,7 +137,7 @@ export default function ProfileEditScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]?.uri) {
       update("profilePicUri", result.assets[0].uri);
     }
   };
