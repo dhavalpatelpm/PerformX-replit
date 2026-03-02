@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,19 +9,18 @@ import {
   TextInput,
   Platform,
   Share,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/context/ThemeContext";
 import { useHabits, Habit, HabitCategory } from "@/context/HabitsContext";
 
 const CATEGORIES: HabitCategory[] = ["Training", "Recovery", "Nutrition", "Mental"];
+const SWIPE_THRESHOLD = 55;
+const ACTION_WIDTH = 80;
 
 const CATEGORY_COLORS: Record<HabitCategory, string> = {
   Training: "#FF6B35",
@@ -54,98 +53,123 @@ const HABIT_ICONS = [
   "thermometer-outline",
   "bed-outline",
   "nutrition-outline",
-  "fitness-outline",
   "stopwatch-outline",
+  "fitness-outline",
 ];
 
-
-function AnimatedHabitRow({ habit }: { habit: Habit }) {
-  const { colors } = useTheme();
-  const { toggleHabit, getStreak, isCompletedToday } = useHabits();
-  const done = isCompletedToday(habit);
-  const streak = getStreak(habit);
-  const scale = useSharedValue(1);
-  const catColor = CATEGORY_COLORS[habit.category];
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handleToggle = useCallback(() => {
-    Haptics.impactAsync(done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
-    toggleHabit(habit.id);
-  }, [done, habit.id, toggleHabit]);
-
-  const onPress = useCallback(() => {
-    handleToggle();
-    scale.value = withSpring(0.94, { damping: 15, stiffness: 300 }, () => {
-      scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-    });
-  }, [handleToggle]);
-
+function HabitForm({
+  name,
+  setName,
+  category,
+  setCategory,
+  icon,
+  setIcon,
+  onSubmit,
+  submitLabel,
+  colors,
+}: {
+  name: string;
+  setName: (v: string) => void;
+  category: HabitCategory;
+  setCategory: (v: HabitCategory) => void;
+  icon: string;
+  setIcon: (v: string) => void;
+  onSubmit: () => void;
+  submitLabel: string;
+  colors: any;
+}) {
   return (
-    <Animated.View style={[animStyle]}>
-      <Pressable
-        onPress={onPress}
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={styles.modalBody}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>
+        Habit Name
+      </Text>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="e.g. Morning Run"
+        placeholderTextColor={colors.textMuted}
         style={[
-          styles.habitRow,
-          {
-            backgroundColor: colors.card,
-            borderColor: done ? catColor + "50" : colors.border,
-            borderWidth: 1,
-          },
+          styles.input,
+          { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" },
         ]}
-      >
-        <View style={[styles.habitAccent, { backgroundColor: catColor }]} />
-        <View style={[styles.habitIconWrap, { backgroundColor: catColor + "20" }]}>
-          <Ionicons
-            name={habit.icon as any}
-            size={20}
-            color={catColor}
-          />
-        </View>
-        <View style={styles.habitInfo}>
-          <Text
+        autoFocus
+        returnKeyType="done"
+      />
+
+      <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
+        Category
+      </Text>
+      <View style={styles.categoryRow}>
+        {CATEGORIES.map((cat) => (
+          <Pressable
+            key={cat}
+            onPress={() => setCategory(cat)}
             style={[
-              styles.habitName,
+              styles.catBtn,
               {
-                color: done ? colors.textMuted : colors.text,
-                textDecorationLine: done ? "line-through" : "none",
-                fontFamily: "Outfit_600SemiBold",
+                backgroundColor: category === cat ? CATEGORY_COLORS[cat] + "25" : colors.card,
+                borderColor: category === cat ? CATEGORY_COLORS[cat] : colors.border,
               },
             ]}
           >
-            {habit.name}
-          </Text>
-          <View style={styles.habitMeta}>
-            <View style={[styles.catBadge, { backgroundColor: catColor + "20" }]}>
-              <Text style={[styles.catBadgeText, { color: catColor, fontFamily: "Outfit_500Medium" }]}>
-                {habit.category}
-              </Text>
-            </View>
-            {streak > 0 && (
-              <View style={styles.streakBadge}>
-                <Ionicons name="flame" size={12} color="#FF6B35" />
-                <Text style={[styles.streakText, { color: "#FF6B35", fontFamily: "Outfit_700Bold" }]}>
-                  {streak}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-        <View
-          style={[
-            styles.checkbox,
-            {
-              backgroundColor: done ? catColor : "transparent",
-              borderColor: done ? catColor : colors.border,
-            },
-          ]}
-        >
-          {done && <Ionicons name="checkmark" size={16} color="#fff" />}
-        </View>
+            <Ionicons
+              name={CATEGORY_ICONS[cat] as any}
+              size={14}
+              color={category === cat ? CATEGORY_COLORS[cat] : colors.textMuted}
+              style={{ marginRight: 5 }}
+            />
+            <Text
+              style={[
+                styles.catBtnText,
+                { color: category === cat ? CATEGORY_COLORS[cat] : colors.textSecondary, fontFamily: "Outfit_600SemiBold" },
+              ]}
+            >
+              {cat}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
+        Icon
+      </Text>
+      <View style={styles.iconGrid}>
+        {HABIT_ICONS.map((ic) => (
+          <Pressable
+            key={ic}
+            onPress={() => setIcon(ic)}
+            style={[
+              styles.iconBtn,
+              {
+                backgroundColor: icon === ic ? CATEGORY_COLORS[category] + "25" : colors.card,
+                borderColor: icon === ic ? CATEGORY_COLORS[category] : colors.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name={ic as any}
+              size={22}
+              color={icon === ic ? CATEGORY_COLORS[category] : colors.textSecondary}
+            />
+          </Pressable>
+        ))}
+      </View>
+
+      <Pressable
+        onPress={onSubmit}
+        style={({ pressed }) => [
+          styles.submitBtn,
+          { backgroundColor: CATEGORY_COLORS[category], opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <Text style={[styles.submitBtnText, { fontFamily: "Outfit_700Bold" }]}>{submitLabel}</Text>
       </Pressable>
-    </Animated.View>
+    </ScrollView>
   );
 }
 
@@ -170,108 +194,289 @@ function AddHabitModal({ visible, onClose }: { visible: boolean; onClose: () => 
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
         <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.modalTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>
-            New Habit
-          </Text>
-          <Pressable onPress={onClose} hitSlop={12}>
-            <Ionicons name="close" size={24} color={colors.textSecondary} />
+          <Text style={[styles.modalTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>New Habit</Text>
+          <Pressable onPress={onClose} hitSlop={12} style={styles.modalCloseBtn}>
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
           </Pressable>
         </View>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
-          <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>
-            Habit Name
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Morning Run"
-            placeholderTextColor={colors.textMuted}
-            style={[
-              styles.input,
-              { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, fontFamily: "Outfit_400Regular" },
-            ]}
-            autoFocus
-          />
-          <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
-            Category
-          </Text>
-          <View style={styles.categoryRow}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat}
-                onPress={() => setCategory(cat)}
-                style={[
-                  styles.catBtn,
-                  {
-                    backgroundColor: category === cat ? CATEGORY_COLORS[cat] + "30" : colors.card,
-                    borderColor: category === cat ? CATEGORY_COLORS[cat] : colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.catBtnText,
-                    {
-                      color: category === cat ? CATEGORY_COLORS[cat] : colors.textSecondary,
-                      fontFamily: "Outfit_600SemiBold",
-                    },
-                  ]}
-                >
-                  {cat}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={[styles.label, { color: colors.textSecondary, fontFamily: "Outfit_500Medium", marginTop: 20 }]}>
-            Icon
-          </Text>
-          <View style={styles.iconGrid}>
-            {HABIT_ICONS.map((ic) => (
-              <Pressable
-                key={ic}
-                onPress={() => setIcon(ic)}
-                style={[
-                  styles.iconBtn,
-                  {
-                    backgroundColor: icon === ic ? CATEGORY_COLORS[category] + "30" : colors.card,
-                    borderColor: icon === ic ? CATEGORY_COLORS[category] : colors.border,
-                  },
-                ]}
-              >
-                <Ionicons name={ic as any} size={22} color={icon === ic ? CATEGORY_COLORS[category] : colors.textSecondary} />
-              </Pressable>
-            ))}
-          </View>
-          <Pressable
-            onPress={handleAdd}
-            style={({ pressed }) => [
-              styles.addBtn,
-              { backgroundColor: CATEGORY_COLORS[category], opacity: pressed ? 0.85 : 1 },
-            ]}
-          >
-            <Text style={[styles.addBtnText, { fontFamily: "Outfit_700Bold" }]}>Add Habit</Text>
-          </Pressable>
-        </ScrollView>
+        <HabitForm
+          name={name}
+          setName={setName}
+          category={category}
+          setCategory={setCategory}
+          icon={icon}
+          setIcon={setIcon}
+          onSubmit={handleAdd}
+          submitLabel="Add Habit"
+          colors={colors}
+        />
       </View>
     </Modal>
   );
 }
 
+function EditHabitModal({
+  habit,
+  visible,
+  onClose,
+}: {
+  habit: Habit | null;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const { colors } = useTheme();
+  const { editHabit } = useHabits();
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<HabitCategory>("Training");
+  const [icon, setIcon] = useState("barbell-outline");
+
+  useEffect(() => {
+    if (habit) {
+      setName(habit.name);
+      setCategory(habit.category);
+      setIcon(habit.icon);
+    }
+  }, [habit]);
+
+  const handleSave = () => {
+    if (!habit || !name.trim()) return;
+    editHabit(habit.id, name.trim(), category, icon);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.modalTitleRow}>
+            <View style={[styles.editHeaderDot, { backgroundColor: CATEGORY_COLORS[category] }]} />
+            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: "Outfit_700Bold" }]}>Edit Habit</Text>
+          </View>
+          <Pressable onPress={onClose} hitSlop={12} style={styles.modalCloseBtn}>
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+        <HabitForm
+          name={name}
+          setName={setName}
+          category={category}
+          setCategory={setCategory}
+          icon={icon}
+          setIcon={setIcon}
+          onSubmit={handleSave}
+          submitLabel="Save Changes"
+          colors={colors}
+        />
+      </View>
+    </Modal>
+  );
+}
+
+function SwipeableHabitRow({
+  habit,
+  onEdit,
+  onDelete,
+}: {
+  habit: Habit;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { colors } = useTheme();
+  const { toggleHabit, getStreak, isCompletedToday } = useHabits();
+  const done = isCompletedToday(habit);
+  const streak = getStreak(habit);
+  const catColor = CATEGORY_COLORS[habit.category];
+
+  const translateX = useRef(new Animated.Value(0)).current;
+  const snappedOffset = useRef(0);
+
+  const snapToValue = useCallback(
+    (toValue: number, callback?: () => void) => {
+      Animated.spring(translateX, {
+        toValue,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 220,
+        mass: 0.8,
+      }).start(callback);
+    },
+    [translateX]
+  );
+
+  const close = useCallback(() => {
+    snappedOffset.current = 0;
+    snapToValue(0);
+  }, [snapToValue]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.3,
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+      },
+      onPanResponderMove: (_, gs) => {
+        const base = snappedOffset.current;
+        const raw = base + gs.dx;
+        const clamped = Math.max(-ACTION_WIDTH, Math.min(ACTION_WIDTH, raw));
+        translateX.setValue(clamped);
+      },
+      onPanResponderRelease: (_, gs) => {
+        const base = snappedOffset.current;
+        const totalDx = base + gs.dx;
+
+        if (gs.dx < -SWIPE_THRESHOLD && base >= 0) {
+          snappedOffset.current = -ACTION_WIDTH;
+          snapToValue(-ACTION_WIDTH);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } else if (gs.dx > SWIPE_THRESHOLD && base <= 0) {
+          snappedOffset.current = ACTION_WIDTH;
+          snapToValue(ACTION_WIDTH);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } else if (gs.dx > SWIPE_THRESHOLD / 2 && base < 0) {
+          snappedOffset.current = 0;
+          snapToValue(0);
+        } else if (gs.dx < -SWIPE_THRESHOLD / 2 && base > 0) {
+          snappedOffset.current = 0;
+          snapToValue(0);
+        } else {
+          snapToValue(snappedOffset.current);
+        }
+      },
+      onPanResponderTerminate: () => {
+        snappedOffset.current = 0;
+        snapToValue(0);
+      },
+    })
+  ).current;
+
+  const handlePress = () => {
+    if (snappedOffset.current !== 0) {
+      close();
+      return;
+    }
+    Haptics.impactAsync(done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
+    toggleHabit(habit.id);
+  };
+
+  const handleEdit = () => {
+    close();
+    setTimeout(onEdit, 250);
+  };
+
+  const handleDelete = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    close();
+    setTimeout(onDelete, 200);
+  };
+
+  return (
+    <View style={styles.swipeWrapper}>
+      <View style={[styles.actionLeft, { backgroundColor: "#FF3B30", borderRadius: 16 }]}>
+        <Pressable onPress={handleDelete} style={styles.actionBtn} hitSlop={8}>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
+          <Text style={[styles.actionLabel, { fontFamily: "Outfit_600SemiBold" }]}>Delete</Text>
+        </Pressable>
+      </View>
+
+      <View style={[styles.actionRight, { backgroundColor: "#FF8C00", borderRadius: 16 }]}>
+        <Pressable onPress={handleEdit} style={styles.actionBtn} hitSlop={8}>
+          <Ionicons name="pencil-outline" size={22} color="#fff" />
+          <Text style={[styles.actionLabel, { fontFamily: "Outfit_600SemiBold" }]}>Edit</Text>
+        </Pressable>
+      </View>
+
+      <Animated.View
+        style={[styles.habitRowWrap, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <Pressable
+          onPress={handlePress}
+          style={[
+            styles.habitRow,
+            {
+              backgroundColor: colors.card,
+              borderColor: done ? catColor + "55" : colors.border,
+              borderWidth: 1,
+            },
+          ]}
+        >
+          <View style={[styles.habitAccent, { backgroundColor: catColor }]} />
+          <View style={[styles.habitIconWrap, { backgroundColor: catColor + "20" }]}>
+            <Ionicons name={habit.icon as any} size={20} color={catColor} />
+          </View>
+          <View style={styles.habitInfo}>
+            <Text
+              style={[
+                styles.habitName,
+                {
+                  color: done ? colors.textMuted : colors.text,
+                  textDecorationLine: done ? "line-through" : "none",
+                  fontFamily: "Outfit_600SemiBold",
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {habit.name}
+            </Text>
+            <View style={styles.habitMeta}>
+              <View style={[styles.catBadge, { backgroundColor: catColor + "20" }]}>
+                <Text style={[styles.catBadgeText, { color: catColor, fontFamily: "Outfit_500Medium" }]}>
+                  {habit.category}
+                </Text>
+              </View>
+              {streak > 0 && (
+                <View style={styles.streakBadge}>
+                  <Ionicons name="flame" size={12} color="#FF6B35" />
+                  <Text style={[styles.streakText, { color: "#FF6B35", fontFamily: "Outfit_700Bold" }]}>
+                    {streak}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <Pressable
+            onPress={() => {
+              if (snappedOffset.current !== 0) { close(); return; }
+              Haptics.impactAsync(done ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
+              toggleHabit(habit.id);
+            }}
+            style={[
+              styles.checkbox,
+              {
+                backgroundColor: done ? catColor : "transparent",
+                borderColor: done ? catColor : colors.border,
+              },
+            ]}
+            hitSlop={8}
+          >
+            {done && <Ionicons name="checkmark" size={16} color="#fff" />}
+          </Pressable>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function TodayScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { habits, getTodayProgress, isCompletedToday, removeHabit } = useHabits();
   const insets = useSafeAreaInsets();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<HabitCategory | "All">("All");
+
   const progress = getTodayProgress();
   const completedCount = habits.filter(isCompletedToday).length;
 
-  const filtered = selectedCategory === "All"
-    ? habits
-    : habits.filter((h) => h.category === selectedCategory);
+  const filtered =
+    selectedCategory === "All"
+      ? habits
+      : habits.filter((h) => h.category === selectedCategory);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const botPad = Platform.OS === "web" ? 34 : 0;
 
   const handleShare = async () => {
     const lines = habits
@@ -293,7 +498,7 @@ export default function TodayScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingTop: topPad + 12, paddingBottom: insets.bottom + 160 },
+          { paddingTop: topPad + 16, paddingBottom: insets.bottom + 160 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -308,7 +513,7 @@ export default function TodayScreen() {
           </View>
           <Pressable
             onPress={handleShare}
-            style={[styles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[styles.iconCircle, { backgroundColor: colors.card, borderColor: colors.border }]}
             hitSlop={8}
           >
             <Ionicons name="share-outline" size={20} color={colors.tint} />
@@ -324,13 +529,10 @@ export default function TodayScreen() {
               {completedCount} of {habits.length} habits done
             </Text>
             <View style={[styles.progressBarWrap, { backgroundColor: colors.border }]}>
-              <Animated.View
+              <View
                 style={[
                   styles.progressBarFill,
-                  {
-                    width: `${Math.round(progress * 100)}%` as any,
-                    backgroundColor: colors.tint,
-                  },
+                  { width: `${Math.round(progress * 100)}%` as any, backgroundColor: colors.tint },
                 ]}
               />
             </View>
@@ -391,7 +593,7 @@ export default function TodayScreen() {
                 {cat !== "All" && (
                   <Ionicons
                     name={CATEGORY_ICONS[cat] as any}
-                    size={14}
+                    size={13}
                     color={active ? "#fff" : catColor}
                     style={{ marginRight: 4 }}
                   />
@@ -399,10 +601,7 @@ export default function TodayScreen() {
                 <Text
                   style={[
                     styles.filterChipText,
-                    {
-                      color: active ? "#fff" : colors.textSecondary,
-                      fontFamily: "Outfit_600SemiBold",
-                    },
+                    { color: active ? "#fff" : colors.textSecondary, fontFamily: "Outfit_600SemiBold" },
                   ]}
                 >
                   {cat}
@@ -421,17 +620,36 @@ export default function TodayScreen() {
               </Text>
             </View>
           ) : (
-            filtered.map((habit) => <AnimatedHabitRow key={habit.id} habit={habit} />)
+            filtered.map((habit) => (
+              <SwipeableHabitRow
+                key={habit.id}
+                habit={habit}
+                onEdit={() => setEditingHabit(habit)}
+                onDelete={() => removeHabit(habit.id)}
+              />
+            ))
           )}
         </View>
+
+        {habits.length > 0 && (
+          <View style={styles.swipeHint}>
+            <View style={styles.swipeHintInner}>
+              <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
+              <Text style={[styles.swipeHintText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                Swipe left to edit
+              </Text>
+            </View>
+            <View style={styles.swipeHintInner}>
+              <Text style={[styles.swipeHintText, { color: colors.textMuted, fontFamily: "Outfit_400Regular" }]}>
+                Swipe right to delete
+              </Text>
+              <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      <View
-        style={[
-          styles.fab,
-          { bottom: insets.bottom + 76, backgroundColor: colors.tint },
-        ]}
-      >
+      <View style={[styles.fab, { bottom: insets.bottom + 76, backgroundColor: colors.tint }]}>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -445,6 +663,11 @@ export default function TodayScreen() {
       </View>
 
       <AddHabitModal visible={showAddModal} onClose={() => setShowAddModal(false)} />
+      <EditHabitModal
+        habit={editingHabit}
+        visible={editingHabit !== null}
+        onClose={() => setEditingHabit(null)}
+      />
     </View>
   );
 }
@@ -460,7 +683,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: { fontSize: 14, marginBottom: 2 },
   dateLabel: { fontSize: 28 },
-  shareBtn: {
+  iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -483,9 +706,15 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 6, borderRadius: 3 },
   progressPct: { fontSize: 22 },
   progressRingWrap: { marginLeft: 16 },
-  ringContainer: { width: 80, height: 80, position: "relative", alignItems: "center", justifyContent: "center" },
+  ringContainer: {
+    width: 80,
+    height: 80,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   ringLabel: { fontSize: 22, zIndex: 1 },
-  catFilterRow: { paddingBottom: 16, gap: 8 },
+  catFilterRow: { paddingBottom: 14, gap: 8 },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -496,25 +725,77 @@ const styles = StyleSheet.create({
   },
   filterChipText: { fontSize: 13 },
   habitsList: { gap: 10 },
+
+  swipeWrapper: {
+    position: "relative",
+    height: 76,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  actionLeft: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionRight: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtn: {
+    flex: 1,
+    width: ACTION_WIDTH,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+  },
+  actionLabel: {
+    color: "#fff",
+    fontSize: 11,
+  },
+  habitRowWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   habitRow: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 16,
-    padding: 14,
+    height: 76,
     paddingLeft: 0,
+    paddingRight: 12,
     overflow: "hidden",
   },
-  habitAccent: { width: 4, height: "100%", position: "absolute", left: 0, top: 0, bottom: 0 },
+  habitAccent: {
+    width: 4,
+    height: "100%",
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+  },
   habitIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 14,
     marginRight: 12,
+    flexShrink: 0,
   },
-  habitInfo: { flex: 1 },
+  habitInfo: { flex: 1, minWidth: 0 },
   habitName: { fontSize: 15, marginBottom: 5 },
   habitMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
   catBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
@@ -522,14 +803,24 @@ const styles = StyleSheet.create({
   streakBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   streakText: { fontSize: 12 },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 4,
+    flexShrink: 0,
   },
+
+  swipeHint: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  swipeHintInner: { flexDirection: "row", alignItems: "center", gap: 4 },
+  swipeHintText: { fontSize: 11 },
+
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
@@ -548,7 +839,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     shadowColor: "#00E676",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -558,6 +849,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 28,
   },
+
   modalContainer: { flex: 1 },
   modalHeader: {
     flexDirection: "row",
@@ -567,8 +859,16 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderBottomWidth: 1,
   },
+  modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  editHeaderDot: { width: 10, height: 10, borderRadius: 5 },
   modalTitle: { fontSize: 20 },
-  modalBody: { padding: 20, paddingBottom: 40 },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBody: { padding: 20, paddingBottom: 48 },
   label: { fontSize: 13, marginBottom: 10 },
   input: {
     borderWidth: 1,
@@ -579,6 +879,8 @@ const styles = StyleSheet.create({
   },
   categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   catBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
@@ -594,10 +896,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addBtn: {
+  submitBtn: {
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
   },
-  addBtnText: { fontSize: 16, color: "#fff" },
+  submitBtnText: { fontSize: 16, color: "#fff" },
 });

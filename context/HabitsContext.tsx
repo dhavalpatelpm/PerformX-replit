@@ -25,6 +25,7 @@ interface HabitsContextValue {
   todayKey: string;
   toggleHabit: (id: string) => void;
   addHabit: (name: string, category: HabitCategory, icon: string) => void;
+  editHabit: (id: string, name: string, category: HabitCategory, icon: string) => void;
   removeHabit: (id: string) => void;
   getStreak: (habit: Habit) => number;
   isCompletedToday: (habit: Habit) => boolean;
@@ -205,6 +206,19 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const editHabit = useCallback(
+    (id: string, name: string, category: HabitCategory, icon: string) => {
+      setHabits((prev) => {
+        const updated = prev.map((h) =>
+          h.id === id ? { ...h, name, category, icon } : h
+        );
+        persist(updated);
+        return updated;
+      });
+    },
+    [persist]
+  );
+
   const removeHabit = useCallback(
     (id: string) => {
       setHabits((prev) => {
@@ -241,6 +255,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       todayKey,
       toggleHabit,
       addHabit,
+      editHabit,
       removeHabit,
       getStreak,
       isCompletedToday,
@@ -252,6 +267,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
       todayKey,
       toggleHabit,
       addHabit,
+      editHabit,
       removeHabit,
       getStreak,
       isCompletedToday,
