@@ -25,8 +25,6 @@ const CATEGORIES: HabitCategory[] = ["Mental", "Nutrition", "Personal", "Recover
 
 /* ─── Time Picker Types & Helpers ─────────────────────────────────────── */
 type TimeVal = { hour: number; minute: number; ampm: "AM" | "PM" };
-const MINUTE_STEPS = [0, 15, 30, 45];
-
 function parseTimeStr(str: string): TimeVal {
   const m = str.trim().match(/^(\d+):(\d+)\s*(AM|PM)$/i);
   if (m) return { hour: parseInt(m[1], 10), minute: parseInt(m[2], 10), ampm: m[3].toUpperCase() as "AM" | "PM" };
@@ -39,8 +37,7 @@ function cycleHour(h: number, dir: 1 | -1): number {
   let n = h + dir; if (n > 12) n = 1; if (n < 1) n = 12; return n;
 }
 function cycleMinute(m: number, dir: 1 | -1): number {
-  const i = MINUTE_STEPS.indexOf(m);
-  return MINUTE_STEPS[(i + dir + MINUTE_STEPS.length) % MINUTE_STEPS.length];
+  let n = m + dir; if (n > 59) n = 0; if (n < 0) n = 59; return n;
 }
 
 function TimeSpinner({ val, onChange, accent, colors }: { val: TimeVal; onChange: (v: TimeVal) => void; accent: string; colors: any }) {
