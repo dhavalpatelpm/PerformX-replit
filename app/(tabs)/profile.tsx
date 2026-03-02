@@ -505,7 +505,8 @@ export default function ProfileScreen() {
             Fuel it up!
           </Text>
           <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
-            Crafted by Dhaval Patel
+            Crafted by{" "}
+            <Text style={{ fontSize: 20 }}>Dhaval Patel</Text>
           </Text>
           <Text style={pStyles.footerHeart}>{"❤️"}</Text>
           <Text style={[pStyles.footerCredit, { color: "#FFFFFF", fontFamily: "Outfit_700Bold" }]}>
