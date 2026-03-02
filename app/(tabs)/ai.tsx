@@ -258,7 +258,7 @@ export default function AiScreen() {
             <Text style={[s.promptsLabel, { color: colors.textSecondary, fontFamily: "Outfit_500Medium" }]}>
               Try asking
             </Text>
-            <View style={s.chipsGrid}>
+            <View style={s.welcomeGrid}>
               {QUICK_PROMPTS.map(p => (
                 <Pressable
                   key={p}
@@ -268,7 +268,7 @@ export default function AiScreen() {
                     { backgroundColor: pressed ? NEON + "25" : NEON + "12", borderColor: NEON + "35" },
                   ]}
                 >
-                  <Ionicons name="sparkles-outline" size={13} color={NEON} style={{ marginRight: 6 }} />
+                  <Ionicons name="sparkles-outline" size={12} color={NEON} />
                   <Text style={[s.chipText, { color: NEON, fontFamily: "Outfit_500Medium" }]}>{p}</Text>
                 </Pressable>
               ))}
@@ -454,17 +454,24 @@ const s = StyleSheet.create({
   snapshotVal: { fontSize: 22 },
   snapshotLabel: { fontSize: 11, marginTop: 2 },
 
-  promptsLabel: { alignSelf: "flex-start", fontSize: 13, marginBottom: 12 },
-  chipsGrid: { width: "100%", gap: 8 },
+  promptsLabel: { alignSelf: "flex-start", fontSize: 13, marginBottom: 10 },
+  welcomeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    width: "100%",
+  },
   chip: {
+    width: "47.5%",
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    gap: 6,
   },
-  chipText: { fontSize: 13 },
+  chipText: { fontSize: 12, flex: 1, lineHeight: 16 },
 
   /* Messages */
   messagesList: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, gap: 12 },
